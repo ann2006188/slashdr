@@ -1,0 +1,17 @@
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\AuditLogController.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\AuditLogger.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\AuditLogRepository.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\BackendApplication.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\ClinicLicenseController.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\ClinicLicenseRepository.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\config\SecurityConfig.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\ConsentRecordController.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\ConsentRecordRepository.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\ConsentTemplateController.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\ConsentTemplateRepository.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\CurrentUserService.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\DocumentController.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\entity\AuditLog.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\entity\ClinicLicense.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\entity\ConsentRecord.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\entity\ConsentTemplate.java

@@ -1,0 +1,12 @@
+backend/target/
+backend/.idea/
+backend/.vscode/
+backend/*.class
+backend/*.log
+backend/*.iml
+
+frontend/node_modules/
+
+.env
+
+.DS_Store
