@@ -1,88 +1,36 @@
 # SlashDR
 
-## Project Overview
-
 SlashDR is an internal clinic management system.
 
-The project is NOT a marketing website.
+Purpose:
+- Manage Consent Templates
+- Manage Consent Records
+- Track Clinic Licenses
+- Upload Documents
+- Maintain Audit Logs
 
-Its goal is to help clinic staff manage:
-
-- Consent Templates
-- Consent Records
-- Clinic Licenses
-- Uploaded Documents
-- Audit Logs
-
-Backend is approximately 75% complete.
-
-Frontend has not yet been developed.
-
----
-
-## Technology Stack
-
-Backend
+Backend:
 - Spring Boot
-- Java
 - Spring Security
-- Spring Data JPA
-- Thymeleaf
+- JPA
 - MySQL
+- Thymeleaf
 
-Frontend
+Frontend:
 - HTML
 - CSS
 - JavaScript
 
-IMPORTANT
+Backend is approximately 75% complete.
 
-Do NOT migrate frameworks.
+The frontend has not yet been built.
 
-Do NOT use React.
+The backend is the source of truth.
 
-Do NOT use Angular.
+Do not modify backend logic unless explicitly requested.
 
-Do NOT use Vue.
+Do not change API endpoints.
 
-Do NOT rewrite the backend.
+Do not introduce React, Vue, Angular, Next.js, Tailwind, or other frontend frameworks.
 
-Do NOT change API contracts.
-
----
-
-## Your Responsibilities
-
-You are ONLY responsible for frontend development.
-
-Keep every existing backend endpoint.
-
-Keep every entity.
-
-Keep every controller.
-
-Frontend should connect to the existing backend.
-
----
-
-## UI Goal
-
-The application should look modern and premium.
-
-Use smooth animations.
-
-Professional spacing.
-
-Beautiful cards.
-
-Elegant forms.
-
-Responsive layouts.
-
-Modern dashboard.
-
-Minimal design.
-
-Excellent UX.
-
-The functionality must remain exactly as defined in the requirements.
+The UI should be modern, responsive, professional, and suitable for an internal enterprise application.
