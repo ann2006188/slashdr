@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting - SlashDR</title>
+    <script>
+        // If authenticated, go to dashboard, else go to login
+        const isAuthenticated = sessionStorage.getItem('slashdr_auth') !== null;
+        if (isAuthenticated) {
+            window.location.replace('/dashboard.html');
+        } else {
+            window.location.replace('/login.html');
+        }
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>

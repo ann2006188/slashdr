@@ -89,9 +89,16 @@ public class SecurityConfig {
 
                 // Everything else under /api requires login at minimum
                 .requestMatchers("/api/**").authenticated()
+                // Permit all static resource paths so the frontend can be loaded
+                .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/favicon.ico").permitAll()
                 .anyRequest().authenticated()
             )
-            .httpBasic(basic -> {});
+            // Configure custom entry point to suppress browser's native Basic Auth dialog
+            .httpBasic(basic -> basic.authenticationEntryPoint((request, response, authException) -> {
+                response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Invalid credentials\"}");
+            }));
 
         return http.build();
     }

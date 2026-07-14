@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SlashDR Compliance</title>
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <style>
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            position: relative;
+            background-color: var(--bg-app);
+            overflow: hidden;
+        }
+
+        /* Ambient Glow Blobs */
+        .glow-blob {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0) 70%);
+            filter: blur(40px);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .glow-blob-1 {
+            top: -100px;
+            right: -100px;
+        }
+
+        .glow-blob-2 {
+            bottom: -150px;
+            left: -150px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            z-index: 2;
+            padding: 2.5rem;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo {
+            width: 48px;
+            height: 48px;
+            background: var(--primary-gradient);
+            border-radius: var(--radius-md);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.25rem;
+            color: #ffffff;
+            box-shadow: var(--shadow-glow);
+            animation: pulseGlow 3s infinite;
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input {
+            padding-right: 2.75rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            transition: color var(--transition-fast);
+        }
+
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+
+        /* Demo credentials section */
+        .demo-credentials {
+            margin-top: 2rem;
+            padding: 1.25rem;
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        .demo-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .demo-user {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .demo-user:hover {
+            border-color: var(--primary);
+            background-color: var(--bg-card-hover);
+        }
+
+        .demo-user-role {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .demo-user-creds {
+            color: var(--text-muted);
+            font-family: monospace;
+            margin-top: 0.125rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="glow-blob glow-blob-1"></div>
+        <div class="glow-blob glow-blob-2"></div>
+
+        <div class="card card-glass login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h2 class="login-title">SlashDR Portal</h2>
+                <p class="login-subtitle">Compliance & Management Hub</p>
+            </div>
+
+            <div id="login-alert" class="alert alert-danger" style="display: none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span id="alert-message">Invalid username or password</span>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username</label>
+                    <input class="form-input" type="text" id="username" placeholder="e.g., admin1" required autocomplete="username">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input class="form-input" type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" id="toggle-password" class="password-toggle">
+                            <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit" class="btn btn-primary" style="width: 100%;">
+                    <span>Sign In</span>
+                </button>
+            </form>
+
+            <div class="demo-credentials">
+                <div class="demo-title">
+                    <span>Quick-Select Demo Accounts</span>
+                    <span style="color: var(--primary); font-size: 0.6875rem;">Click to Autofill</span>
+                </div>
+                <div class="demo-grid">
+                    <button class="demo-user" data-user="admin1" data-pass="admin123">
+                        <span class="demo-user-role">Clinic Admin</span>
+                        <span class="demo-user-creds">admin1 / admin123</span>
+                    </button>
+                    <button class="demo-user" data-user="superadmin1" data-pass="super123">
+                        <span class="demo-user-role">Super Admin</span>
+                        <span class="demo-user-creds">superadmin1 / super...</span>
+                    </button>
+                    <button class="demo-user" data-user="doctor1" data-pass="doctor123">
+                        <span class="demo-user-role">Doctor</span>
+                        <span class="demo-user-creds">doctor1 / doctor123</span>
+                    </button>
+                    <button class="demo-user" data-user="staff1" data-pass="staff123">
+                        <span class="demo-user-role">Support Staff</span>
+                        <span class="demo-user-creds">staff1 / staff123</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/login.js"></script>
+</body>
+</html>

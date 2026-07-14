@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Licenses - SlashDR Compliance</title>
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <style>
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .summary-val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .summary-lbl {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.125rem;
+        }
+
+        .licenses-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1200px) {
+            .licenses-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .licenses-grid {
+                grid-template-columns: 1fr;
+            }
+            .summary-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .summary-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .license-card {
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .license-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .license-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .license-info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8125rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .license-info-lbl {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .license-info-val {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .duplicate-alert {
+            background-color: var(--status-warning-bg);
+            border: 1px solid var(--status-warning-border);
+            color: var(--status-warning-text);
+            padding: 0.625rem 0.875rem;
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .license-actions {
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.875rem;
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Drag and Drop area inside drawer form */
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.01);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .dropzone:hover {
+            border-color: var(--primary);
+            background-color: var(--bg-card-hover);
+        }
+
+        .dropzone-text {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .file-preview {
+            background-color: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8125rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar placeholder -->
+        <aside id="sidebar-container"></aside>
+        
+        <!-- Main Area -->
+        <main class="main-content">
+            <!-- Header placeholder -->
+            <header id="header-container"></header>
+            
+            <!-- Page Contents -->
+            <div id="page-content" class="animate-slide-up" style="display: none;">
+                
+                <!-- Summary KPI Row -->
+                <div class="summary-row" id="kpi-container">
+                    <div class="summary-card">
+                        <div>
+                            <div class="summary-val" id="kpi-total">0</div>
+                            <div class="summary-lbl">Total Current</div>
+                        </div>
+                        <div style="color: var(--primary);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 11 13 15 9"/></svg>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div>
+                            <div class="summary-val" id="kpi-valid" style="color: var(--status-valid-text);">0</div>
+                            <div class="summary-lbl">Valid</div>
+                        </div>
+                        <div style="color: var(--status-valid-text);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    </div>
+                    <div class="summary-card">
+                        <div>
+                            <div class="summary-val" id="kpi-warning" style="color: var(--status-warning-text);">0</div>
+                            <div class="summary-lbl">Renewal Due</div>
+                        </div>
+                        <div style="color: var(--status-warning-text);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>
+                    </div>
+                    <div class="summary-card">
+                        <div>
+                            <div class="summary-val" id="kpi-danger" style="color: var(--status-danger-text);">0</div>
+                            <div class="summary-lbl">Expired / Urgent</div>
+                        </div>
+                        <div style="color: var(--status-danger-text);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+                    </div>
+                </div>
+
+                <!-- Top bar filtering / actions -->
+                <div class="filter-bar" style="margin-bottom: 2rem;">
+                    <div class="filter-group">
+                        <div class="form-group" style="margin-bottom: 0; flex: 2;">
+                            <input type="text" id="search-authority" class="form-input" placeholder="Search by issuing authority or number..." style="padding: 0.625rem 1rem;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                            <select id="filter-license-type" class="form-input" style="padding: 0.625rem 1rem;">
+                                <option value="">All Types</option>
+                                <option value="Clinical Establishment">Clinical Establishment</option>
+                                <option value="Fire NOC">Fire NOC</option>
+                                <option value="Biomedical Waste">Biomedical Waste</option>
+                                <option value="PC-PNDT">PC-PNDT</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;" id="superadmin-clinic-filter-block">
+                            <!-- Populated for Super Admin only -->
+                        </div>
+                    </div>
+                    <button id="btn-add-license" class="btn btn-primary" style="display: none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>Add License</span>
+                    </button>
+                </div>
+
+                <!-- Licenses Card Deck -->
+                <div class="licenses-grid" id="licenses-container">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="licenses-empty-state" style="display: none;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+                    <h3>No compliance licenses found</h3>
+                    <p>Try modifying your filters, or record a new license file if you are an administrator.</p>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- DRAWER: Add License -->
+    <div class="drawer" id="add-license-drawer">
+        <div class="drawer-header">
+            <h3 class="modal-title">Record Compliance License</h3>
+            <button class="modal-close" id="btn-close-add-drawer">&times;</button>
+        </div>
+        <form id="add-license-form" style="display: flex; flex-direction: column; height: calc(100% - 70px);">
+            <div class="drawer-body flex flex-col gap-4">
+                
+                <!-- Super Admin Clinic scope -->
+                <div class="form-group" id="drawer-clinic-block" style="display: none;">
+                    <label class="form-label" for="add-clinic-id">Clinic ID *</label>
+                    <select id="add-clinic-id" class="form-input">
+                        <option value="" disabled selected>Select clinic scope...</option>
+                        <option value="clinic-001">Clinic 001</option>
+                        <option value="clinic-002">Clinic 002</option>
+                        <option value="clinic-003">Clinic 003</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="add-license-type">License Type *</label>
+                    <select id="add-license-type" class="form-input" required>
+                        <option value="" disabled selected>Select license type...</option>
+                        <option value="Clinical Establishment">Clinical Establishment</option>
+                        <option value="Fire NOC">Fire NOC</option>
+                        <option value="Biomedical Waste">Biomedical Waste</option>
+                        <option value="PC-PNDT">PC-PNDT</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="add-license-number">License/Registration Number *</label>
+                    <input type="text" id="add-license-number" class="form-input" placeholder="e.g. CE-29402" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="add-issuing-authority">Issuing Authority *</label>
+                    <input type="text" id="add-issuing-authority" class="form-input" placeholder="e.g. State Health Department" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label" for="add-issue-date">Issue Date *</label>
+                        <input type="date" id="add-issue-date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="add-expiry-date">Expiry Date *</label>
+                        <input type="date" id="add-expiry-date" class="form-input" required>
+                    </div>
+                </div>
+
+                <!-- Document Attachment Upload -->
+                <div class="form-group">
+                    <label class="form-label">Verification Attachment (PDF/Image) *</label>
+                    <div class="dropzone" id="add-dropzone">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <div class="dropzone-text">Drag & drop certificate here or click to browse</div>
+                        <input type="file" id="add-file-input" style="display: none;" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="file-preview" id="add-file-preview" style="display: none;">
+                        <span id="add-filename" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px;">filename.pdf</span>
+                        <button type="button" class="btn-logout" id="btn-remove-add-file" title="Remove attachment">&times;</button>
+                    </div>
+                    <input type="hidden" id="add-document-url">
+                </div>
+
+            </div>
+            <div class="drawer-footer">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-add">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="btn-save-license">Save License</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- DRAWER: Renew License -->
+    <div class="drawer" id="renew-license-drawer">
+        <div class="drawer-header">
+            <h3 class="modal-title">Renew License</h3>
+            <button class="modal-close" id="btn-close-renew-drawer">&times;</button>
+        </div>
+        <form id="renew-license-form" style="display: flex; flex-direction: column; height: calc(100% - 70px);">
+            <div class="drawer-body flex flex-col gap-4">
+                
+                <!-- Old Details (ReadOnly) -->
+                <div style="background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
+                    <div class="license-info-row">
+                        <span class="license-info-lbl">License Type</span>
+                        <span class="license-info-val" id="renew-old-type"></span>
+                    </div>
+                    <div class="license-info-row">
+                        <span class="license-info-lbl">Old License Number</span>
+                        <span class="license-info-val" id="renew-old-number" style="font-family: monospace;"></span>
+                    </div>
+                    <div class="license-info-row" style="margin-bottom: 0;">
+                        <span class="license-info-lbl">Issuing Authority</span>
+                        <span class="license-info-val" id="renew-old-authority"></span>
+                    </div>
+                </div>
+
+                <input type="hidden" id="renew-license-id">
+
+                <div class="form-group">
+                    <label class="form-label" for="renew-license-number">New License Number *</label>
+                    <input type="text" id="renew-license-number" class="form-input" placeholder="e.g. CE-29402" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label" for="renew-issue-date">Issue Date *</label>
+                        <input type="date" id="renew-issue-date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="renew-expiry-date">Expiry Date *</label>
+                        <input type="date" id="renew-expiry-date" class="form-input" required>
+                    </div>
+                </div>
+
+                <!-- Document Attachment Upload -->
+                <div class="form-group">
+                    <label class="form-label">New Verification Attachment (PDF/Image) *</label>
+                    <div class="dropzone" id="renew-dropzone">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <div class="dropzone-text">Drag & drop certificate here or click to browse</div>
+                        <input type="file" id="renew-file-input" style="display: none;" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="file-preview" id="renew-file-preview" style="display: none;">
+                        <span id="renew-filename" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px;">filename.pdf</span>
+                        <button type="button" class="btn-logout" id="btn-remove-renew-file" title="Remove attachment">&times;</button>
+                    </div>
+                    <input type="hidden" id="renew-document-url">
+                </div>
+
+            </div>
+            <div class="drawer-footer">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-renew">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="btn-submit-renew">Submit Renewal</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Backdrop for Drawer modals -->
+    <div class="modal-backdrop" id="license-backdrop"></div>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/clinic-licenses.js"></script>
+</body>
+</html>

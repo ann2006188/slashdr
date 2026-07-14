@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs - SlashDR Compliance</title>
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <style>
+        .meta-preview-box {
+            background-color: #05060b;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8125rem;
+            color: #818cf8; /* Light indigo code text */
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .meta-key {
+            color: var(--text-secondary);
+        }
+
+        .meta-val-string {
+            color: #34d399; /* Green strings */
+        }
+
+        .meta-val-num {
+            color: #fbbf24; /* Amber numbers */
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar placeholder -->
+        <aside id="sidebar-container"></aside>
+        
+        <!-- Main Area -->
+        <main class="main-content">
+            <!-- Header placeholder -->
+            <header id="header-container"></header>
+            
+            <!-- Page Contents -->
+            <div id="page-content" class="animate-slide-up" style="display: none;">
+                
+                <!-- Filter bar -->
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <div class="form-group" style="margin-bottom: 0; flex: 1.5;">
+                            <input type="text" id="search-user" class="form-input" placeholder="Search by performed User ID..." style="padding: 0.625rem 1rem;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                            <select id="filter-entity-type" class="form-input" style="padding: 0.625rem 1rem;">
+                                <option value="">All Entity Types</option>
+                                <option value="consent_template">Consent Template</option>
+                                <option value="consent_record">Consent Record</option>
+                                <option value="clinic_license">Clinic License</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                            <select id="filter-action-type" class="form-input" style="padding: 0.625rem 1rem;">
+                                <option value="">All Action Types</option>
+                                <option value="LOGIN">LOGIN</option>
+                                <option value="CREATED">CREATED</option>
+                                <option value="UPDATED">UPDATED</option>
+                                <option value="DECLINED">DECLINED</option>
+                                <option value="RENEWED">RENEWED</option>
+                                <option value="VOIDED">VOIDED</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="btn-refresh-logs" class="btn btn-secondary" style="padding: 0.625rem 1.25rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        <span>Refresh Logs</span>
+                    </button>
+                </div>
+
+                <!-- Table Logs Container -->
+                <div class="table-container animate-fade-in" id="logs-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Log ID</th>
+                                <th>Timestamp</th>
+                                <th>User ID</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                                <th>Target Entity</th>
+                                <th>Entity ID</th>
+                                <th style="text-align: right;">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-tbody">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="logs-empty-state" style="display: none;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <h3>No audit logs logged</h3>
+                    <p>Try modifying your search filter keywords or execute compliance actions to generate log entries.</p>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- SIDE-DRAWER: Log Detail Viewer -->
+    <div class="drawer" id="log-details-drawer" style="max-width: 550px;">
+        <div class="drawer-header">
+            <h3 class="modal-title">System Audit Log #<span id="detail-log-id"></span></h3>
+            <button class="modal-close" id="btn-close-details">&times;</button>
+        </div>
+        <div class="drawer-body flex flex-col gap-6" style="padding-bottom: 3rem;">
+            
+            <!-- Metadata summary block -->
+            <div class="grid grid-cols-2 gap-4" style="background-color: var(--bg-input); padding: 1.25rem; border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+                <div class="flex flex-col gap-1">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">PERFORMED BY</span>
+                    <span id="detail-log-userid" style="font-weight: 700; color: var(--text-primary);"></span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">USER ROLE</span>
+                    <span id="detail-log-userrole" style="font-weight: 600;"></span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">ACTION TYPE</span>
+                    <span id="detail-log-action"></span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">TIMESTAMP</span>
+                    <span id="detail-log-time" style="color: var(--text-secondary);"></span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">ENTITY SCOPE</span>
+                    <span id="detail-log-entitytype" style="font-weight: 600;"></span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">ENTITY TARGET ID</span>
+                    <span id="detail-log-entityid" style="font-weight: 600; color: var(--primary);"></span>
+                </div>
+            </div>
+
+            <!-- JSON Meta Details block -->
+            <div class="flex flex-col gap-2">
+                <span class="form-label">Extended Metadata JSON Log</span>
+                <div class="meta-preview-box" id="detail-log-json">
+                    <!-- Formatted JSON -->
+                </div>
+            </div>
+
+        </div>
+        <div class="drawer-footer">
+            <button type="button" class="btn btn-secondary" id="btn-close-details-footer">Close</button>
+        </div>
+    </div>
+
+    <!-- Backdrop for Drawer -->
+    <div class="modal-backdrop" id="logs-backdrop"></div>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/audit-logs.js"></script>
+</body>
+</html>

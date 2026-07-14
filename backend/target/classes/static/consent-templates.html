@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consent Templates - SlashDR Compliance</title>
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <style>
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .template-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .template-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 220px;
+        }
+
+        .template-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .template-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .template-body-preview {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            flex: 1;
+        }
+
+        .template-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            margin-top: auto;
+        }
+
+        /* Drawer details styling */
+        .editor-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .placeholder-helper {
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .placeholder-tag {
+            display: inline-block;
+            background-color: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-family: monospace;
+            font-weight: 600;
+            margin: 0.25rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .placeholder-tag:hover {
+            border-color: var(--primary);
+            background-color: var(--primary-glow);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar container -->
+        <aside id="sidebar-container"></aside>
+        
+        <!-- Main Area -->
+        <main class="main-content">
+            <!-- Header container -->
+            <header id="header-container"></header>
+            
+            <!-- Page content -->
+            <div id="page-content" class="animate-slide-up" style="display: none;">
+                
+                <!-- Search & Filters -->
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <div class="form-group" style="margin-bottom: 0; flex: 2;">
+                            <input type="text" id="search-name" class="form-input" placeholder="Search templates by name..." style="padding: 0.625rem 1rem;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                            <select id="filter-procedure" class="form-input" style="padding: 0.625rem 1rem;">
+                                <option value="">All Procedure Types</option>
+                                <option value="Surgical">Surgical</option>
+                                <option value="Anesthesia">Anesthesia</option>
+                                <option value="Blood Transfusion">Blood Transfusion</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="btn-new-template" class="btn btn-primary" style="display: none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>New Template</span>
+                    </button>
+                </div>
+
+                <!-- Template Grid -->
+                <div class="template-grid" id="template-grid">
+                    <!-- Loaded dynamically -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    <h3>No templates found</h3>
+                    <p>Try modifying your search query or procedure filter, or create a new template if you are an administrator.</p>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Side-Drawer Editor -->
+    <div class="drawer" id="template-drawer">
+        <div class="drawer-header">
+            <h3 class="modal-title" id="drawer-title">New Consent Template</h3>
+            <button class="modal-close" id="btn-close-drawer">&times;</button>
+        </div>
+        <form id="template-form" style="display: flex; flex-direction: column; height: calc(100% - 70px);">
+            <div class="drawer-body">
+                <input type="hidden" id="template-id">
+                
+                <div class="editor-layout">
+                    <div class="form-group">
+                        <label class="form-label" for="template-name">Template Name</label>
+                        <input type="text" id="template-name" class="form-input" placeholder="e.g., General Surgical Consent" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="procedure-type">Procedure Type</label>
+                        <select id="procedure-type" class="form-input" required>
+                            <option value="" disabled selected>Select procedure type...</option>
+                            <option value="Surgical">Surgical</option>
+                            <option value="Anesthesia">Anesthesia</option>
+                            <option value="Blood Transfusion">Blood Transfusion</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="form-body">Form Body (Consent Text)</label>
+                        <textarea id="form-body" class="form-input" style="height: 200px; resize: vertical; line-height: 1.5; font-family: inherit;" placeholder="Type the legal consent text here. Use the placeholder tags below for dynamic fields..." required></textarea>
+                        
+                        <div class="placeholder-helper">
+                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.5rem; text-transform: uppercase;">Placeholder Helper (Click to Insert)</span>
+                            <div style="margin: -0.25rem;">
+                                <span class="placeholder-tag" data-tag="[Patient Name]">[Patient Name]</span>
+                                <span class="placeholder-tag" data-tag="[Patient ID]">[Patient ID]</span>
+                                <span class="placeholder-tag" data-tag="[Visit ID]">[Visit ID]</span>
+                                <span class="placeholder-tag" data-tag="[Witness Name]">[Witness Name]</span>
+                                <span class="placeholder-tag" data-tag="[Clinic ID]">[Clinic ID]</span>
+                                <span class="placeholder-tag" data-tag="[Date]">[Date]</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="switch-container">
+                            <input type="checkbox" id="requires-witness" class="switch-input">
+                            <span class="switch-slider"></span>
+                            <span class="form-label" style="margin-bottom: 0;">Requires Witness Signature</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="switch-container">
+                            <input type="checkbox" id="is-active" class="switch-input" checked>
+                            <span class="switch-slider"></span>
+                            <span class="form-label" style="margin-bottom: 0;">Active Template</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="drawer-footer">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-drawer">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="btn-save-template">Save Template</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Backdrop for drawer -->
+    <div class="modal-backdrop" id="drawer-backdrop"></div>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/consent-templates.js"></script>
+</body>
+</html>
