@@ -8,77 +8,308 @@
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/components.css">
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Force zero page scroll */
+        }
+
         .login-wrapper {
-            min-height: 100vh;
+            height: 100vh;
+            width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 1.5rem;
             position: relative;
             background-color: var(--bg-app);
             overflow: hidden;
         }
 
-        /* Ambient Glow Blobs */
-        .glow-blob {
+        /* Tech grid blueprint pattern - subtle */
+        .tech-grid {
             position: absolute;
-            width: 400px;
-            height: 400px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0) 70%);
-            filter: blur(40px);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.008) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.008) 1px, transparent 1px);
+            background-size: 40px 40px;
             z-index: 1;
             pointer-events: none;
         }
 
-        .glow-blob-1 {
-            top: -100px;
+        /* Ambient moving light spots */
+        .light-spot {
+            position: absolute;
+            border-radius: 50%;
+            z-index: 1;
+            pointer-events: none;
+            mix-blend-mode: screen;
+            filter: blur(120px);
+            opacity: 0.75;
+        }
+
+        .spot-1 {
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 70%);
+            top: -150px;
             right: -100px;
+            animation: moveLight1 35s infinite alternate ease-in-out;
         }
 
-        .glow-blob-2 {
-            bottom: -150px;
+        .spot-2 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0) 70%);
+            bottom: -200px;
             left: -150px;
+            animation: moveLight2 40s infinite alternate ease-in-out;
         }
 
+        .spot-3 {
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, rgba(59, 130, 246, 0) 70%);
+            top: 30%;
+            left: 20%;
+            animation: moveLight3 28s infinite alternate ease-in-out;
+        }
+
+        @keyframes moveLight1 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-100px, 80px) scale(1.1); }
+        }
+
+        @keyframes moveLight2 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(120px, -100px) scale(0.95); }
+        }
+
+        @keyframes moveLight3 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-60px, 60px) scale(1.15); }
+        }
+
+        /* Giant abstract background glowing shield watermark */
+        .background-shield-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 780px;
+            height: 780px;
+            z-index: 1;
+            pointer-events: none;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .background-shield-rotator {
+            width: 100%;
+            height: 100%;
+            opacity: 0.035; /* low opacity watermark */
+            filter: blur(4px);
+            animation: slowShieldRotate 50s linear infinite;
+        }
+
+        .bg-shield-svg {
+            width: 100%;
+            height: 100%;
+            color: var(--primary);
+        }
+
+        @keyframes slowShieldRotate {
+            0% { transform: rotate(0deg) scale(0.97); }
+            50% { transform: rotate(180deg) scale(1.03); }
+            100% { transform: rotate(360deg) scale(0.97); }
+        }
+
+        /* Floating particles */
+        .particles-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background-color: #a5b4fc; /* Brighter indigo/white */
+            border-radius: 50%;
+            filter: drop-shadow(0 0 5px #818cf8);
+            pointer-events: none;
+        }
+
+        @keyframes floatParticle {
+            0% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            12% { opacity: var(--p-opacity, 0.25); }
+            88% { opacity: var(--p-opacity, 0.25); }
+            100% {
+                transform: translateY(-110vh) translateX(var(--drift, 30px));
+                opacity: 0;
+            }
+        }
+
+        /* Status top bar */
+        .top-status-bar {
+            position: absolute;
+            top: 1.5rem;
+            left: 2rem;
+            right: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            z-index: 3;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .status-dot {
+            width: 5px;
+            height: 5px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulseDot 2s infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% {
+                opacity: 0.6;
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+                box-shadow: 0 0 6px 1px rgba(16, 185, 129, 0.4);
+            }
+        }
+
+        .status-datetime {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            font-family: monospace;
+        }
+
+        /* Container stacking cards */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            z-index: 2;
+            width: 100%;
+            max-width: 720px; /* Landscape card profile */
+            animation: slideUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Landscape Primary Login Card */
         .login-card {
             width: 100%;
-            max-width: 440px;
-            z-index: 2;
-            padding: 2.5rem;
-            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            padding: 2.25rem 2.75rem;
+            background: linear-gradient(135deg, rgba(14, 18, 30, 0.6) 0%, rgba(8, 10, 18, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: var(--radius-lg);
+            box-shadow: 
+                0 32px 64px -16px rgba(0, 0, 0, 0.65),
+                inset 0 0 24px rgba(255, 255, 255, 0.01);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            transition: transform 0.1s ease-out;
         }
 
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(450px circle at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255, 255, 255, 0.04), transparent 50%);
+            pointer-events: none;
+            z-index: 4;
+            border-radius: inherit;
+        }
+
+        /* Landscape Split Grid */
+        .login-split {
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 2.5rem;
+            align-items: center;
+        }
+
+        .login-info-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .login-logo {
             width: 48px;
             height: 48px;
-            background: var(--primary-gradient);
+            background: linear-gradient(135deg, var(--primary) 0%, #818cf8 100%);
             border-radius: var(--radius-md);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 1.25rem;
             color: #ffffff;
-            box-shadow: var(--shadow-glow);
-            animation: pulseGlow 3s infinite;
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.25);
         }
 
         .login-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.025em;
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
             color: var(--text-primary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .login-subtitle {
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-desc {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            line-height: 1.4;
         }
 
         .input-wrapper {
@@ -101,123 +332,243 @@
             padding: 0.25rem;
             display: flex;
             align-items: center;
-            transition: color var(--transition-fast);
         }
 
         .password-toggle:hover {
             color: var(--text-primary);
         }
 
-        /* Demo credentials section */
-        .demo-credentials {
-            margin-top: 2rem;
-            padding: 1.25rem;
-            background-color: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
+        /* Card 2: Separated Horizontal Demo Accounts Row */
+        .demo-card {
+            width: 100%;
+            padding: 1.125rem 2rem;
+            background: linear-gradient(135deg, rgba(14, 18, 30, 0.45) 0%, rgba(8, 10, 18, 0.65) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
         .demo-title {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 700;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 0.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .demo-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-            font-size: 0.75rem;
+        .demo-row {
+            display: flex;
+            flex-direction: row;
+            gap: 0.75rem;
+            width: 100%;
         }
 
         .demo-user {
-            background-color: var(--bg-input);
+            flex: 1;
+            background-color: rgba(255, 255, 255, 0.015);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            padding: 0.5rem 0.75rem;
             cursor: pointer;
             transition: all var(--transition-fast);
             display: flex;
             flex-direction: column;
             text-align: left;
+            justify-content: center;
         }
 
         .demo-user:hover {
             border-color: var(--primary);
             background-color: var(--bg-card-hover);
+            transform: translateY(-2px);
         }
 
         .demo-user-role {
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-primary);
+            font-size: 0.75rem;
         }
 
         .demo-user-creds {
             color: var(--text-muted);
             font-family: monospace;
-            margin-top: 0.125rem;
+            margin-top: 0.1rem;
+            font-size: 0.6875rem;
+        }
+
+        /* Footer styling */
+        .login-footer {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 2rem;
+            right: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            z-index: 3;
+        }
+
+        .footer-version {
+            font-weight: 600;
+            font-family: monospace;
+            background: rgba(255,255,255,0.015);
+            border: 1px solid var(--border-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Clean form spacing updates */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group:last-of-type {
+            margin-bottom: 1.5rem;
+        }
+
+        /* Responsive stack */
+        @media (max-width: 768px) {
+            html, body {
+                overflow: auto; /* Allow overflow only on mobile views */
+            }
+            .login-wrapper {
+                height: auto;
+                min-height: 100vh;
+                padding: 4.5rem 1.5rem 2rem;
+                flex-direction: column;
+            }
+            .top-status-bar {
+                position: fixed;
+                top: 0.75rem;
+                left: 1rem;
+                right: 1rem;
+            }
+            .login-split {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .demo-row {
+                flex-direction: column;
+            }
+            .login-footer {
+                position: static;
+                width: 100%;
+                margin-top: 2rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="login-wrapper">
-        <div class="glow-blob glow-blob-1"></div>
-        <div class="glow-blob glow-blob-2"></div>
+        <!-- Blueprint Grid and Shadows -->
+        <div class="tech-grid"></div>
+        <div class="light-spot spot-1"></div>
+        <div class="light-spot spot-2"></div>
+        <div class="light-spot spot-3"></div>
 
-        <div class="card card-glass login-card">
-            <div class="login-header">
-                <div class="login-logo">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-                <h2 class="login-title">SlashDR Portal</h2>
-                <p class="login-subtitle">Compliance & Management Hub</p>
+        <!-- Giant background shield watermark container -->
+        <div class="background-shield-container" id="bg-shield-container">
+            <div class="background-shield-rotator">
+                <svg class="bg-shield-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
             </div>
+        </div>
 
-            <div id="login-alert" class="alert alert-danger" style="display: none;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span id="alert-message">Invalid username or password</span>
+        <!-- Floating ambient particles -->
+        <div class="particles-container" id="particles-container"></div>
+
+        <!-- Status bar -->
+        <div class="top-status-bar animate-fade-in">
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span>Secure Connection Established</span>
             </div>
+            <div class="status-datetime" id="status-datetime">Calculating today...</div>
+        </div>
 
-            <form id="login-form">
-                <div class="form-group">
-                    <label class="form-label" for="username">Username</label>
-                    <input class="form-input" type="text" id="username" placeholder="e.g., admin1" required autocomplete="username">
-                </div>
+        <!-- Stacked Card Container -->
+        <div class="login-container">
+            <!-- Card 1: Primary Login Card (Landscape-oriented) -->
+            <div class="card card-glass login-card" id="tilt-login-card">
+                <div class="login-split">
+                    <!-- Left: Graphic & Heading info -->
+                    <div class="login-info-panel">
+                        <div class="login-logo">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        </div>
+                        <h2 class="login-title">Protect.<br>Comply. Care.</h2>
+                        <p class="login-subtitle">Compliance & Consent Hub</p>
+                        <span class="login-desc">Secure, audited workspace for healthcare practitioners, administrators, and coordinators.</span>
+                    </div>
 
-                <div class="form-group" style="margin-bottom: 2rem;">
-                    <label class="form-label" for="password">Password</label>
-                    <div class="input-wrapper">
-                        <input class="form-input" type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
-                        <button type="button" id="toggle-password" class="password-toggle">
-                            <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </button>
+                    <!-- Right: Form inputs -->
+                    <div>
+                        <!-- Danger Alerts placeholder -->
+                        <div id="login-alert" class="alert alert-danger" style="display: none; padding: 0.5rem 0.75rem; font-size: 0.78rem; margin-bottom: 1rem; gap: 0.5rem;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            <span id="alert-message">Invalid credentials</span>
+                        </div>
+
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.75rem;" for="username">Username</label>
+                                <input class="form-input" style="padding: 0.6rem 0.85rem; font-size: 0.85rem;" type="text" id="username" placeholder="e.g., admin1" required autocomplete="username">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.75rem;" for="password">Password</label>
+                                <div class="input-wrapper">
+                                    <input class="form-input" style="padding: 0.6rem 0.85rem; font-size: 0.85rem;" type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+                                    <button type="button" id="toggle-password" class="password-toggle">
+                                        <svg id="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="btn-submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem 1.25rem; font-size: 0.875rem;">
+                                <span>Sign In</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
+            </div>
 
-                <button type="submit" id="btn-submit" class="btn btn-primary" style="width: 100%;">
-                    <span>Sign In</span>
-                </button>
-            </form>
-
-            <div class="demo-credentials">
+            <!-- Card 2: Separated Horizontal Demo Accounts Row -->
+            <div class="card demo-card">
                 <div class="demo-title">
                     <span>Quick-Select Demo Accounts</span>
-                    <span style="color: var(--primary); font-size: 0.6875rem;">Click to Autofill</span>
+                    <span style="color: var(--primary); font-size: 0.6875rem;">Click to Autofill Credentials</span>
                 </div>
-                <div class="demo-grid">
+                <div class="demo-row">
                     <button class="demo-user" data-user="admin1" data-pass="admin123">
                         <span class="demo-user-role">Clinic Admin</span>
                         <span class="demo-user-creds">admin1 / admin123</span>
                     </button>
                     <button class="demo-user" data-user="superadmin1" data-pass="super123">
                         <span class="demo-user-role">Super Admin</span>
-                        <span class="demo-user-creds">superadmin1 / super...</span>
+                        <span class="demo-user-creds">superadmin1 / super123</span>
                     </button>
                     <button class="demo-user" data-user="doctor1" data-pass="doctor123">
                         <span class="demo-user-role">Doctor</span>
@@ -230,9 +581,120 @@
                 </div>
             </div>
         </div>
+
+        <!-- Footer copyrights bar -->
+        <footer class="login-footer animate-fade-in">
+            <div class="footer-version">SlashDR POC v1.0</div>
+            <div class="footer-copyright">© SlashDR • Compliance & Consent Management Hub</div>
+        </footer>
     </div>
 
     <script src="/js/app.js"></script>
     <script src="/js/login.js"></script>
+    
+    <script>
+        // Real-time Date and Time display formatter
+        function updateDateTime() {
+            const el = document.getElementById('status-datetime');
+            if (!el) return;
+            const now = new Date();
+            const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const optionsTime = { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true };
+            const dateStr = now.toLocaleDateString('en-US', optionsDate);
+            const timeStr = now.toLocaleTimeString('en-US', optionsTime);
+            el.textContent = `${dateStr}  •  ${timeStr}`;
+        }
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // High-performance canvas-free floating particles generator
+        function createParticles() {
+            const container = document.getElementById('particles-container');
+            if (!container) return;
+            
+            const limit = 75; // Increased density for high visibility
+            for (let i = 0; i < limit; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = Math.random() * 4 + 2.5; // Slightly larger for better optics
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.left = `${Math.random() * 100}%`;
+                p.style.top = '105%'; // Start below the screen
+                
+                const opacity = Math.random() * 0.35 + 0.25; // Brighter opacity range (0.25 to 0.6)
+                p.style.setProperty('--p-opacity', opacity);
+                p.style.opacity = opacity;
+                
+                const drift = Math.random() * 80 - 40; // -40px to +40px horizontal drift
+                p.style.setProperty('--drift', `${drift}px`);
+                
+                const speed = Math.random() * 22 + 13; // Visibly float up at a balanced pace
+                p.style.animation = `floatParticle ${speed}s infinite linear`;
+                p.style.animationDelay = `-${Math.random() * speed}s`;
+                
+                container.appendChild(p);
+            }
+        }
+        createParticles();
+
+        // High-performance mouse parallax tilt and background watermark translation
+        (function() {
+            const card = document.getElementById('tilt-login-card');
+            const wrapper = document.querySelector('.login-wrapper');
+            const shieldContainer = document.getElementById('bg-shield-container');
+            if (!wrapper) return;
+
+            // Cache dimensions on hover to avoid layout thrashing during mouse movements
+            let rect = null;
+            if (card) {
+                card.addEventListener('mouseenter', () => {
+                    rect = card.getBoundingClientRect();
+                });
+            }
+
+            wrapper.addEventListener('mousemove', (e) => {
+                const widthHalf = window.innerWidth / 2;
+                const heightHalf = window.innerHeight / 2;
+                
+                // 1. Background Shield Parallax movement (very subtle)
+                const shieldX = (e.clientX - widthHalf) * 0.025;
+                const shieldY = (e.clientY - heightHalf) * 0.025;
+                if (shieldContainer) {
+                    shieldContainer.style.transform = `translate(calc(-50% + ${shieldX}px), calc(-50% + ${shieldY}px))`;
+                }
+
+                // 2. Card Parallax tilt & glare calculations
+                if (card && rect) {
+                    const cardCenterX = rect.left + rect.width / 2;
+                    const cardCenterY = rect.top + rect.height / 2;
+                    
+                    const percentX = (e.clientX - cardCenterX) / widthHalf;
+                    const percentY = (e.clientY - cardCenterY) / heightHalf;
+                    
+                    const maxRotation = 6; // subtle tilt
+                    const rotX = (percentY * -maxRotation).toFixed(2);
+                    const rotY = (percentX * maxRotation).toFixed(2);
+                    
+                    card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-2px)`;
+                    
+                    card.style.setProperty('--glare-x', `${(percentX * 50) + 50}%`);
+                    card.style.setProperty('--glare-y', `${(percentY * 50) + 50}%`);
+                }
+            });
+
+            wrapper.addEventListener('mouseleave', () => {
+                rect = null;
+                if (card) {
+                    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+                    card.style.setProperty('--glare-x', '50%');
+                    card.style.setProperty('--glare-y', '50%');
+                }
+                if (shieldContainer) {
+                    shieldContainer.style.transform = 'translate(-50%, -50%)';
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

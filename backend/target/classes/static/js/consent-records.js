@@ -417,7 +417,13 @@ const ConsentRecords = {
 
         let query = '/api/consent-records?';
         if (patientId) query += `patientId=${encodeURIComponent(patientId)}&`;
-        if (status) query += `status=${encodeURIComponent(status)}&`;
+        if (status) {
+            if (status === 'expired') {
+                query += 'status=active&';
+            } else {
+                query += `status=${encodeURIComponent(status)}&`;
+            }
+        }
         if (procedureType) query += `procedureType=${encodeURIComponent(procedureType)}&`;
         if (capturedBy) query += `capturedBy=${encodeURIComponent(capturedBy)}&`;
         if (dateFrom) query += `dateFrom=${encodeURIComponent(dateFrom)}&`;
@@ -429,7 +435,15 @@ const ConsentRecords = {
             // Sort records: newest first (higher ID first)
             records.sort((a, b) => b.id - a.id);
 
-            if (records.length === 0) {
+            // Filter expired vs active records on the client side
+            let filteredRecords = [...records];
+            if (status === 'active') {
+                filteredRecords = filteredRecords.filter(r => !(r.status === 'active' && r.validUntil && new Date(r.validUntil) < new Date()));
+            } else if (status === 'expired') {
+                filteredRecords = filteredRecords.filter(r => r.status === 'active' && r.validUntil && new Date(r.validUntil) < new Date());
+            }
+
+            if (filteredRecords.length === 0) {
                 tableContainer.style.display = 'none';
                 emptyState.style.display = 'flex';
                 return;
@@ -438,7 +452,7 @@ const ConsentRecords = {
             emptyState.style.display = 'none';
             tableContainer.style.display = 'block';
 
-            tbody.innerHTML = records.map(r => {
+            tbody.innerHTML = filteredRecords.map(r => {
                 const dateLabel = r.capturedAt ? new Date(r.capturedAt).toLocaleString() : 'N/A';
                 // Resolve procedure type from templates cache
                 const template = allConsentTemplates.find(t => t.id === r.templateId);
@@ -852,7 +866,13 @@ const ConsentRecords = {
 
         let url = '/api/consent-records/export?';
         if (patientId) url += `patientId=${encodeURIComponent(patientId)}&`;
-        if (status) url += `status=${encodeURIComponent(status)}&`;
+        if (status) {
+            if (status === 'expired') {
+                url += 'status=active&';
+            } else {
+                url += `status=${encodeURIComponent(status)}&`;
+            }
+        }
         if (procedureType) url += `procedureType=${encodeURIComponent(procedureType)}&`;
         if (capturedBy) url += `capturedBy=${encodeURIComponent(capturedBy)}&`;
         if (dateFrom) url += `dateFrom=${encodeURIComponent(dateFrom)}&`;

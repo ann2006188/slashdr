@@ -4,9 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Prevent rendering layout if we are on the login page
     const isLoginPage = window.location.pathname.endsWith('login.html') || window.location.pathname === '/login';
     
-    // Apply saved theme
-    const savedTheme = localStorage.getItem('slashdr_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    // Force dark theme always
+    document.documentElement.setAttribute('data-theme', 'dark');
     
     if (isLoginPage) {
         // If logged in already, redirect to dashboard
@@ -27,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize interactive card glows
     SlashDR.initCardGlows();
+
+    // Initialize viewport scroll animations
+    SlashDR.initScrollAnimations();
 });
 
 const SlashDR = {
@@ -139,17 +141,66 @@ const SlashDR = {
         }
     },
 
-    // Premium cursor-tracking glow initialization helper
+    // Premium cursor-tracking glow initialization helper with layout-thrashing prevention (60fps)
     initCardGlows() {
         document.addEventListener('mousemove', (e) => {
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                card.style.setProperty('--mouse-x', `${x}px`);
-                card.style.setProperty('--mouse-y', `${y}px`);
+            const card = e.target.closest('.card');
+            if (!card) return;
+            
+            // Cache card bounding rect on first hover to prevent layout thrashing
+            if (!card._rect) {
+                card._rect = card.getBoundingClientRect();
+                
+                // Clear cache when mouse leaves
+                card.addEventListener('mouseleave', () => {
+                    card._rect = null;
+                }, { once: true });
+            }
+            
+            const x = e.clientX - card._rect.left;
+            const y = e.clientY - card._rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        });
+
+        // Clear rect caches on container scroll to ensure coordinate accuracy
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.addEventListener('scroll', () => {
+                document.querySelectorAll('.card').forEach(c => {
+                    c._rect = null;
+                });
+            }, { passive: true });
+        }
+    },
+
+    // Premium viewport scroll-reveal animations using IntersectionObserver
+    initScrollAnimations() {
+        const mainContent = document.querySelector('.main-content');
+        
+        if (!window.IntersectionObserver) {
+            document.querySelectorAll('.main-content .card, .main-content .table-container, .main-content .nav-hub-container, .main-content .dashboard-grid').forEach(el => {
+                el.classList.add('in-view');
             });
+            return;
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                }
+            });
+        }, {
+            root: mainContent,
+            threshold: 0.01,
+            rootMargin: '0px 0px 50px 0px' // trigger slightly before it enters the viewport scroll box
+        });
+
+        const targets = document.querySelectorAll('.main-content .card:not(.scroll-reveal), .main-content .table-container:not(.scroll-reveal), .main-content .nav-hub-container:not(.scroll-reveal), .main-content .dashboard-grid:not(.scroll-reveal)');
+        targets.forEach(el => {
+            el.classList.add('scroll-reveal');
+            observer.observe(el);
         });
     },
 
@@ -174,10 +225,10 @@ const SlashDR = {
             const allowedItems = menuItems.filter(item => item.roles.includes(user.role));
 
             let sidebarHtml = `
-                <div class="sidebar-brand">
+                <a href="/dashboard.html" class="sidebar-brand" style="text-decoration: none; color: inherit;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     <span>SlashDR</span>
-                </div>
+                </a>
                 <nav class="sidebar-menu">
             `;
 
@@ -210,8 +261,6 @@ const SlashDR = {
 
         if (header) {
             const pageTitle = document.title.split(' - ')[0];
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const themeIcon = currentTheme === 'light' ? this.icons.moon : this.icons.sun;
 
             header.className = 'flex items-center justify-between';
             header.style.marginBottom = '2rem';
@@ -220,23 +269,7 @@ const SlashDR = {
                     <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${pageTitle}</h1>
                     <span style="font-size: 0.8125rem; color: var(--text-muted);">${user.clinicId ? 'Clinic: ' + user.clinicId.toUpperCase() : 'All Clinics (Super Admin)'}</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <button id="theme-toggle" class="btn btn-secondary" style="padding: 0.5rem;" title="Toggle Theme">
-                        ${themeIcon}
-                    </button>
-                </div>
             `;
-
-            document.getElementById('theme-toggle').addEventListener('click', () => {
-                const html = document.documentElement;
-                const nextTheme = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-                html.setAttribute('data-theme', nextTheme);
-                localStorage.setItem('slashdr_theme', nextTheme);
-                
-                // Swap the button icon dynamically
-                const btn = document.getElementById('theme-toggle');
-                btn.innerHTML = nextTheme === 'light' ? SlashDR.icons.moon : SlashDR.icons.sun;
-            });
         }
     },
 

@@ -1,14 +1,5 @@
-// Dashboard Controller Logic
-
 document.addEventListener('DOMContentLoaded', () => {
     if (!SlashDR.isAuthenticated()) return;
-    
-    // Boundary check: Staff cannot view compliance dashboard (redirect to records)
-    const user = SlashDR.getCurrentUser();
-    if (user.role === 'ROLE_STAFF') {
-        window.location.href = '/consent-records.html';
-        return;
-    }
     
     // Start dashboard initialization
     Dashboard.init();
@@ -26,6 +17,9 @@ const Dashboard = {
         }
 
         try {
+            // Load Navigation Hub cards
+            this.loadNavigationHub(user);
+
             // Load statistics, main grid panels, and alerts based on role
             await this.loadStats(user);
             await this.loadMainPanel(user);
@@ -37,8 +31,27 @@ const Dashboard = {
                 btnTrigger.addEventListener('click', () => this.triggerExpiryCheck(user));
             }
 
+            // Bind Back to Hub action
+            const btnBack = document.getElementById('btn-back-to-hub');
+            if (btnBack) {
+                btnBack.addEventListener('click', () => {
+                    const hub = document.getElementById('nav-hub-section');
+                    const details = document.getElementById('dashboard-details-section');
+                    details.style.display = 'none';
+                    hub.style.display = 'block';
+                    
+                    // Reset scroll position to top of container
+                    const container = document.querySelector('.main-content');
+                    if (container) container.scrollTop = 0;
+                    
+                    // Re-run scroll animations for visible cards
+                    SlashDR.initScrollAnimations();
+                });
+            }
+
             // Reveal Page smoothly
             pageContent.style.display = 'block';
+            SlashDR.initScrollAnimations();
         } catch (error) {
             console.error('Dashboard init error:', error);
             // Display alert banner in main panel
@@ -391,6 +404,125 @@ const Dashboard = {
             btn.disabled = false;
             btn.innerHTML = originalHtml;
         }
+    },
+
+    loadNavigationHub(user) {
+        const hubGrid = document.getElementById('hub-cards-grid');
+        if (!hubGrid) return;
+
+        const allDestinations = [
+            {
+                id: 'overview',
+                name: 'Overview & Analytics',
+                desc: 'Track consent capture performance, view license alert alerts feed, and run automation checks.',
+                icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="17" x2="9" y2="9"/><line x1="13" y1="17" x2="13" y2="13"/><line x1="17" y1="17" x2="17" y2="7"/></svg>`,
+                roles: ['ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'],
+                action: 'scroll'
+            },
+            {
+                id: 'templates',
+                name: 'Consent Templates',
+                desc: 'Manage clinical procedures template forms, configure required variable fields, and review legal text.',
+                icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+                roles: ['ROLE_STAFF', 'ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'],
+                link: '/consent-templates.html'
+            },
+            {
+                id: 'records',
+                name: 'Consent Records',
+                desc: 'Register and execute new patient consent forms, trace history statuses, and generate secure exports.',
+                icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+                roles: ['ROLE_STAFF', 'ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'],
+                link: '/consent-records.html'
+            },
+            {
+                id: 'licenses',
+                name: 'Clinic Licenses',
+                desc: 'Track clinical establishment licenses, medical waste certifications, and trigger renewal workflows.',
+                icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+                roles: ['ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'],
+                link: '/clinic-licenses.html'
+            },
+            {
+                id: 'documents',
+                name: 'Document Center',
+                desc: 'Access secure file uploads, download PDF forms, and manage clinic document storage centers.',
+                icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+                roles: ['ROLE_STAFF', 'ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'],
+                link: '/document-upload.html'
+            },
+            {
+                id: 'audit',
+                name: 'Audit Logs',
+                desc: 'Inspect tamper-evident system logs, track user action events, and audit clinic compliance logs.',
+                icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+                roles: ['ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'],
+                link: '/audit-logs.html'
+            }
+        ];
+
+        const allowedDestinations = allDestinations.filter(d => d.roles.includes(user.role));
+
+        hubGrid.innerHTML = allowedDestinations.map(d => `
+            <div class="card hub-card animate-slide-up" data-id="${d.id}" ${d.link ? `data-link="${d.link}"` : ''}>
+                <div class="hub-card-icon">
+                    ${d.icon}
+                </div>
+                <h3 class="hub-card-title">${d.name}</h3>
+                <p class="hub-card-desc">${d.desc}</p>
+                <div class="hub-card-action">
+                    <span>${d.action === 'scroll' ? 'Open Dashboard' : 'Open Module'}</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </div>
+            </div>
+        `).join('');
+
+        // Bind clicks
+        hubGrid.querySelectorAll('.hub-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const link = card.getAttribute('data-link');
+                const id = card.getAttribute('data-id');
+                if (link) {
+                    window.location.href = link;
+                } else if (id === 'overview') {
+                    const hub = document.getElementById('nav-hub-section');
+                    const details = document.getElementById('dashboard-details-section');
+                    hub.style.display = 'none';
+                    details.style.display = 'block';
+                    
+                    // Reset scroll position to top of container
+                    const container = document.querySelector('.main-content');
+                    if (container) container.scrollTop = 0;
+                    
+                    SlashDR.initScrollAnimations();
+                }
+            });
+        });
+    },
+
+    smoothScrollTo(target, duration = 800) {
+        const container = document.querySelector('.main-content');
+        if (!container) return;
+
+        const targetPosition = target.offsetTop - container.offsetTop;
+        const startPosition = container.scrollTop;
+        const distance = targetPosition - startPosition;
+        let startTime = null;
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function animation(currentTime) {
+            if (startTime === null) startTime = currentTime;
+            const timeElapsed = currentTime - startTime;
+            const run = easeInOutCubic(Math.min(timeElapsed / duration, 1));
+            container.scrollTop = startPosition + distance * run;
+            if (timeElapsed < duration) {
+                requestAnimationFrame(animation);
+            }
+        }
+        requestAnimationFrame(animation);
     },
 
     animateValue(obj, start, end, duration) {
