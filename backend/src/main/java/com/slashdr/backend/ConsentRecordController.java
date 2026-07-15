@@ -13,10 +13,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +73,10 @@ public class ConsentRecordController {
             ConsentTemplate template = templateRepository.findById(record.getTemplateId()).orElse(null);
             if (template == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "No template found with that templateId"));
+            }
+
+            if (!template.isActive()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "This template is inactive and cannot be used for new consents."));
             }
 
             if (template.isRequiresWitness()
@@ -322,5 +328,31 @@ public class ConsentRecordController {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
+    }
+
+    @Scheduled(cron = "0 0 6 * * *")
+    public void scheduledConsentExpiryCheck() {
+        checkConsentExpiry();
+    }
+
+    @PostMapping("/check-expiry")
+    public ResponseEntity<?> triggerConsentExpiry() {
+        int expiredCount = checkConsentExpiry();
+        return ResponseEntity.ok(Map.of("expiredCount", expiredCount));
+    }
+
+    private int checkConsentExpiry() {
+        int expiredCount = 0;
+        List<ConsentRecord> all = repository.findAll();
+        LocalDateTime now = LocalDateTime.now();
+        for (ConsentRecord record : all) {
+            if ("active".equals(record.getStatus()) && record.getValidUntil() != null && record.getValidUntil().isBefore(now)) {
+                record.setStatus("expired");
+                repository.save(record);
+                auditLogger.log("EXPIRED", "consent_record", record.getId());
+                expiredCount++;
+            }
+        }
+        return expiredCount;
     }
 }

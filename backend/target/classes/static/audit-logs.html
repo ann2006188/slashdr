@@ -109,6 +109,37 @@
                     <p>Try modifying your search filter keywords or execute compliance actions to generate log entries.</p>
                 </div>
 
+                <!-- Expiry Notifications Section -->
+                <div class="card" style="margin-top: 3rem; background: linear-gradient(135deg, rgba(16, 18, 26, 0.4) 0%, rgba(10, 12, 18, 0.6) 100%);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                        <div>
+                            <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--text-primary);">License Expiry Notifications Feed</h3>
+                            <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.25rem;">Active thresholds crossed alerts (30, 15, 7, and 0 days warnings log).</p>
+                        </div>
+                    </div>
+                    <div class="table-container" id="notifications-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Alert ID</th>
+                                    <th>Triggered Date</th>
+                                    <th>License Target</th>
+                                    <th>Alert Code</th>
+                                    <th>Message Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notifications-tbody">
+                                <!-- Loaded dynamically from /api/clinic-licenses/notifications -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="notifications-empty-state" style="display: none; padding: 2rem;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <h3>No Expiry Alert Notifications</h3>
+                        <p>No licenses have crossed warning thresholds (30/15/7/0 days before expiration) for your clinic context.</p>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>

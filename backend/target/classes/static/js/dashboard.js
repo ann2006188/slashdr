@@ -3,6 +3,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     if (!SlashDR.isAuthenticated()) return;
     
+    // Boundary check: Staff cannot view compliance dashboard (redirect to records)
+    const user = SlashDR.getCurrentUser();
+    if (user.role === 'ROLE_STAFF') {
+        window.location.href = '/consent-records.html';
+        return;
+    }
+    
     // Start dashboard initialization
     Dashboard.init();
 });
@@ -95,10 +102,10 @@ const Dashboard = {
             ];
         }
 
-        container.innerHTML = stats.map(s => `
-            <div class="card stat-card">
+        container.innerHTML = stats.map((s, idx) => `
+            <div class="card stat-card animate-slide-up" style="animation-delay: ${idx * 0.08}s; opacity: 0; animation-fill-mode: forwards;">
                 <div class="stat-info">
-                    <span class="stat-value">${s.value}</span>
+                    <span class="stat-value" id="stat-val-${idx}">${s.value}</span>
                     <span class="stat-label">${s.label}</span>
                 </div>
                 <div class="stat-icon">
@@ -106,6 +113,14 @@ const Dashboard = {
                 </div>
             </div>
         `).join('');
+
+        // Apply count up animation
+        stats.forEach((s, idx) => {
+            const el = document.getElementById(`stat-val-${idx}`);
+            if (el) {
+                this.animateValue(el, 0, s.value, 800);
+            }
+        });
     },
 
     async loadMainPanel(user) {
@@ -376,5 +391,20 @@ const Dashboard = {
             btn.disabled = false;
             btn.innerHTML = originalHtml;
         }
+    },
+
+    animateValue(obj, start, end, duration) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            obj.innerHTML = Math.floor(progress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                obj.innerHTML = end;
+            }
+        };
+        window.requestAnimationFrame(step);
     }
 };

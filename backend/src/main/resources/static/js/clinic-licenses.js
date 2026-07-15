@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Boundary check: Nursing/Support Staff are blocked from viewing compliance licenses
     if (user.role === 'ROLE_STAFF') {
-        window.location.href = '/dashboard.html';
+        window.location.href = '/consent-records.html';
         return;
     }
 
@@ -26,6 +26,13 @@ const ClinicLicensesPage = {
         if (btnAdd && isAdmin) {
             btnAdd.style.display = 'inline-flex';
             btnAdd.addEventListener('click', () => this.openAddDrawer());
+        }
+
+        // Check Alerts button visibility and click handler
+        const btnAlerts = document.getElementById('btn-check-expiry-alerts');
+        if (btnAlerts && isAdmin) {
+            btnAlerts.style.display = 'inline-flex';
+            btnAlerts.addEventListener('click', () => this.checkExpiryAlerts());
         }
 
         // Expose Clinic filter and clinic input fields for Super Admin only
@@ -224,6 +231,26 @@ const ClinicLicensesPage = {
                 </div>
             `;
         }).join('');
+    },
+
+    async checkExpiryAlerts() {
+        const btnAlerts = document.getElementById('btn-check-expiry-alerts');
+        const originalHtml = btnAlerts.innerHTML;
+        btnAlerts.disabled = true;
+        btnAlerts.innerHTML = `<span>Checking...</span>`;
+        try {
+            const data = await SlashDR.apiFetch('/api/clinic-licenses/check-expiry-notifications', {
+                method: 'POST'
+            });
+            this.showToast(`Checked expiry thresholds! Notifications Fired: ${data.notificationsFired}`);
+            // Reload list to reflect warning changes
+            await this.loadLicenses();
+        } catch (error) {
+            alert('Failed to trigger alerts: ' + error.message);
+        } finally {
+            btnAlerts.disabled = false;
+            btnAlerts.innerHTML = originalHtml;
+        }
     },
 
     // --- Programmatic File Downloads with Auth Headers ---

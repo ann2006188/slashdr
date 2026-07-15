@@ -25,7 +25,10 @@ const AuditLogsPage = {
         document.getElementById('filter-action-type').addEventListener('change', () => this.applyFilters());
         
         // Refresh logs button
-        document.getElementById('btn-refresh-logs').addEventListener('click', () => this.loadLogs());
+        document.getElementById('btn-refresh-logs').addEventListener('click', async () => {
+            await this.loadLogs();
+            await this.loadNotifications();
+        });
 
         // Bind Close actions
         const closeSelectors = ['btn-close-details', 'btn-close-details-footer', 'logs-backdrop'];
@@ -33,8 +36,9 @@ const AuditLogsPage = {
             document.getElementById(id).addEventListener('click', () => this.closeDrawer());
         });
 
-        // Load logs
+        // Load logs and notifications
         await this.loadLogs();
+        await this.loadNotifications();
 
         // Reveal Page content
         document.getElementById('page-content').style.display = 'block';
@@ -201,6 +205,74 @@ const AuditLogsPage = {
         } catch (e) {
             // Return raw string if parse fails
             return `<span class="meta-val-string">"${jsonStr}"</span>`;
+        }
+    },
+
+    async loadNotifications() {
+        const tbody = document.getElementById('notifications-tbody');
+        const container = document.getElementById('notifications-table-container');
+        const emptyState = document.getElementById('notifications-empty-state');
+        if (!tbody) return;
+
+        try {
+            const notifications = await SlashDR.apiFetch('/api/clinic-licenses/notifications');
+            // Sort by id descending
+            notifications.sort((a, b) => b.id - a.id);
+
+            if (notifications.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'flex';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.style.display = 'block';
+
+            tbody.innerHTML = notifications.map(n => {
+                const dateLabel = n.timestamp ? new Date(n.timestamp).toLocaleString() : 'N/A';
+                
+                // Parse details from JSON
+                let detailsMsg = 'Threshold warning triggered.';
+                try {
+                    const meta = JSON.parse(n.metaJson);
+                    if (meta && meta.licenseType) {
+                        detailsMsg = `Threshold alert for ${meta.licenseType} (Number: ${meta.licenseNumber || 'N/A'})`;
+                    }
+                } catch (e) {
+                    if (n.metaJson) detailsMsg = n.metaJson;
+                }
+
+                // Friendly alert code label
+                let alertCode = n.actionType || 'ALERT';
+                let codeClass = 'badge-warning';
+                if (alertCode.includes('_0_')) {
+                    alertCode = 'EXPIRED (0d)';
+                    codeClass = 'badge-danger';
+                } else if (alertCode.includes('_7_')) {
+                    alertCode = 'URGENT (7d)';
+                    codeClass = 'badge-danger';
+                } else if (alertCode.includes('_15_')) {
+                    alertCode = 'ALERT (15d)';
+                    codeClass = 'badge-warning';
+                } else if (alertCode.includes('_30_')) {
+                    alertCode = 'ALERT (30d)';
+                    codeClass = 'badge-muted';
+                }
+
+                return `
+                    <tr>
+                        <td style="font-weight: 600; color: var(--text-muted);">#${n.id}</td>
+                        <td>${dateLabel}</td>
+                        <td style="font-weight: 600; color: var(--primary);">License ID #${n.entityId}</td>
+                        <td><span class="badge ${codeClass}">${alertCode}</span></td>
+                        <td>${detailsMsg}</td>
+                    </tr>
+                `;
+            }).join('');
+
+        } catch (error) {
+            console.error('Failed to load alerts feed:', error);
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--status-danger-text);">Error loading alerts feed: ${error.message}</td></tr>`;
         }
     }
 };

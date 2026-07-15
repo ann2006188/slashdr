@@ -43,10 +43,19 @@ public class ClinicLicenseController {
         if (!"Superseded".equals(license.getStatus())) {
             license.setStatus(computeStatus(license.getExpiryDate()));
         }
+        boolean isDuplicate = repository.findByClinicId(license.getClinicId()).stream()
+                .anyMatch(l -> !l.getId().equals(license.getId())
+                        && l.getLicenseType().equals(license.getLicenseType())
+                        && !"Superseded".equals(l.getStatus()));
+        license.setDuplicateWarning(isDuplicate ? true : null);
     }
 
     @PostMapping
-    public ResponseEntity<ClinicLicense> createLicense(@RequestBody ClinicLicense license) {
+    public ResponseEntity<?> createLicense(@RequestBody ClinicLicense license) {
+        if (license.getExpiryDate() == null || license.getIssueDate() == null || !license.getExpiryDate().isAfter(license.getIssueDate())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Expiry date must be after issue date"));
+        }
+
         if (currentUserService.isSuperAdmin()) {
             if (license.getClinicId() == null) {
                 return ResponseEntity.badRequest().build();
@@ -102,7 +111,11 @@ public class ClinicLicenseController {
     }
 
     @PostMapping("/{id}/renew")
-    public ResponseEntity<ClinicLicense> renewLicense(@PathVariable Long id, @RequestBody ClinicLicense renewalData) {
+    public ResponseEntity<?> renewLicense(@PathVariable Long id, @RequestBody ClinicLicense renewalData) {
+        if (renewalData.getExpiryDate() == null || renewalData.getIssueDate() == null || !renewalData.getExpiryDate().isAfter(renewalData.getIssueDate())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Expiry date must be after issue date"));
+        }
+
         ClinicLicense oldLicense = repository.findById(id).orElse(null);
         if (oldLicense == null) {
             return ResponseEntity.notFound().build();

@@ -183,13 +183,18 @@ const TemplatesPage = {
             active: document.getElementById('is-active').checked
         };
 
+        let url = '/api/consent-templates';
+        let method = 'POST';
+
         if (id) {
             payload.id = parseInt(id, 10);
+            url = `/api/consent-templates/${id}`;
+            method = 'PUT';
         }
 
         try {
-            await SlashDR.apiFetch('/api/consent-templates', {
-                method: 'POST',
+            await SlashDR.apiFetch(url, {
+                method: method,
                 body: JSON.stringify(payload)
             });
 

@@ -530,13 +530,13 @@ const ConsentRecords = {
                 document.getElementById('detail-void-label').textContent = 'Void Reason';
                 document.getElementById('detail-void-reason').textContent = record.voidReason || 'No reason specified.';
                 btnVoid.style.display = 'none';
-                this.loadSignatureImages(record);
+                await this.loadSignatureImages(record);
             } else if (isExpired) {
                 // Expired: Signatures present, no void action
                 signaturesBox.style.display = 'grid';
                 voidBox.style.display = 'none';
                 btnVoid.style.display = 'none';
-                this.loadSignatureImages(record);
+                await this.loadSignatureImages(record);
             } else {
                 // Active: Signatures present, no void reason
                 signaturesBox.style.display = 'grid';
@@ -549,7 +549,7 @@ const ConsentRecords = {
                 } else {
                     btnVoid.style.display = 'none';
                 }
-                this.loadSignatureImages(record);
+                await this.loadSignatureImages(record);
             }
 
             drawer.classList.add('open');
@@ -560,14 +560,18 @@ const ConsentRecords = {
         }
     },
 
-    loadSignatureImages(record) {
-        document.getElementById('detail-patient-signature-img').src = record.patientSignatureUrl || '';
+    async loadSignatureImages(record) {
+        if (record.patientSignatureUrl) {
+            await SlashDR.loadSecureImage('detail-patient-signature-img', record.patientSignatureUrl);
+        } else {
+            document.getElementById('detail-patient-signature-img').style.display = 'none';
+        }
         
         const witnessBlock = document.getElementById('detail-witness-sig-block');
         if (record.witnessSignatureUrl) {
             witnessBlock.style.display = 'flex';
             document.getElementById('detail-witness-name').textContent = record.witnessName || 'Witness';
-            document.getElementById('detail-witness-signature-img').src = record.witnessSignatureUrl;
+            await SlashDR.loadSecureImage('detail-witness-signature-img', record.witnessSignatureUrl);
         } else {
             witnessBlock.style.display = 'none';
         }

@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render Layout Components
     SlashDR.renderLayout();
+    
+    // Initialize interactive card glows
+    SlashDR.initCardGlows();
 });
 
 const SlashDR = {
@@ -103,13 +106,8 @@ const SlashDR = {
                     const errBody = await response.json().catch(() => ({}));
                     throw new Error(errBody.error || errBody.message || `API error ${response.status}`);
                 }
-                
-                // Determine if response is json, text or blob (for files)
                 const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/pdf')) {
-                    return response.blob();
-                }
-                if (contentType && contentType.includes('text/csv')) {
+                if (contentType && (contentType.includes('application/pdf') || contentType.includes('image/') || contentType.includes('text/csv'))) {
                     return response.blob();
                 }
                 if (contentType && contentType.includes('application/json')) {
@@ -117,6 +115,42 @@ const SlashDR = {
                 }
                 return response.text();
             });
+    },
+
+    // Helper to load secure images (e.g. signatures) programmatically using auth headers
+    async loadSecureImage(imgElementId, imageUrl) {
+        const img = document.getElementById(imgElementId);
+        if (!img) return;
+        
+        if (!imageUrl) {
+            img.style.display = 'none';
+            return;
+        }
+        
+        try {
+            const blob = await this.apiFetch(imageUrl);
+            const objectUrl = URL.createObjectURL(blob);
+            img.src = objectUrl;
+            img.style.display = 'block';
+        } catch (error) {
+            console.error('Failed to load secure image:', error);
+            img.src = '';
+            img.style.display = 'none';
+        }
+    },
+
+    // Premium cursor-tracking glow initialization helper
+    initCardGlows() {
+        document.addEventListener('mousemove', (e) => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
     },
 
     // Render navigation and header
@@ -128,7 +162,7 @@ const SlashDR = {
 
         if (sidebar) {
             let menuItems = [
-                { path: '/dashboard.html', name: 'Dashboard', icon: this.icons.dashboard, roles: ['ROLE_STAFF', 'ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] },
+                { path: '/dashboard.html', name: 'Dashboard', icon: this.icons.dashboard, roles: ['ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] },
                 { path: '/consent-templates.html', name: 'Consent Templates', icon: this.icons.templates, roles: ['ROLE_STAFF', 'ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] },
                 { path: '/consent-records.html', name: 'Consent Records', icon: this.icons.records, roles: ['ROLE_STAFF', 'ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] },
                 { path: '/clinic-licenses.html', name: 'Clinic Licenses', icon: this.icons.licenses, roles: ['ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] },
