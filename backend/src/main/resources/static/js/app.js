@@ -62,21 +62,35 @@ const SlashDR = {
     },
 
     getCurrentUser() {
+        const profileStr = sessionStorage.getItem('slashdr_user_profile');
+        if (profileStr) {
+            try {
+                return JSON.parse(profileStr);
+            } catch (e) {}
+        }
         return this.getUserDetails(this.getUsername());
     },
 
     login(username, password) {
         const token = 'Basic ' + btoa(username + ':' + password);
-        return fetch('/api/consent-templates', {
+        return fetch('/api/users/me', {
             method: 'GET',
             headers: {
                 'Authorization': token
             }
         }).then(response => {
             if (response.ok) {
-                sessionStorage.setItem(this.AUTH_KEY, token);
-                sessionStorage.setItem(this.USER_KEY, username);
-                return true;
+                return response.json().then(profile => {
+                    sessionStorage.setItem(this.AUTH_KEY, token);
+                    sessionStorage.setItem(this.USER_KEY, username);
+                    sessionStorage.setItem('slashdr_user_profile', JSON.stringify({
+                        role: profile.role,
+                        clinicId: profile.clinicId,
+                        name: profile.fullName,
+                        desc: profile.desc
+                    }));
+                    return true;
+                });
             }
             throw new Error('Invalid credentials');
         });
@@ -85,6 +99,7 @@ const SlashDR = {
     logout() {
         sessionStorage.removeItem(this.AUTH_KEY);
         sessionStorage.removeItem(this.USER_KEY);
+        sessionStorage.removeItem('slashdr_user_profile');
         window.location.href = '/login.html';
     },
 
@@ -218,7 +233,8 @@ const SlashDR = {
                 { path: '/consent-records.html', name: 'Consent Records', icon: this.icons.records, roles: ['ROLE_STAFF', 'ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] },
                 { path: '/clinic-licenses.html', name: 'Clinic Licenses', icon: this.icons.licenses, roles: ['ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] },
                 { path: '/document-upload.html', name: 'Document Center', icon: this.icons.documents, roles: ['ROLE_STAFF', 'ROLE_DOCTOR', 'ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] },
-                { path: '/audit-logs.html', name: 'Audit Logs', icon: this.icons.audit, roles: ['ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] }
+                { path: '/audit-logs.html', name: 'Audit Logs', icon: this.icons.audit, roles: ['ROLE_CLINIC_ADMIN', 'ROLE_SUPER_ADMIN'] },
+                { path: '/manage-users.html', name: 'Manage Users', icon: this.icons.users, roles: ['ROLE_SUPER_ADMIN'] }
             ];
 
             // Filter menu based on user role
@@ -261,13 +277,26 @@ const SlashDR = {
 
         if (header) {
             const pageTitle = document.title.split(' - ')[0];
+            
+            const getClinicDisplayName = (clinicId) => {
+                if (!clinicId) return 'All Clinics (Super Admin)';
+                const clinics = {
+                    'clinic-001': 'Sunrise Medical Centre',
+                    'clinic-002': 'Horizon Healthcare',
+                    'clinic-003': 'Apex Medical Group'
+                };
+                const name = clinics[clinicId.toLowerCase()] || 'General Clinic';
+                return `Managing: ${name} (${clinicId.toUpperCase()})`;
+            };
 
             header.className = 'flex items-center justify-between';
             header.style.marginBottom = '2rem';
             header.innerHTML = `
                 <div>
                     <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${pageTitle}</h1>
-                    <span style="font-size: 0.8125rem; color: var(--text-muted);">${user.clinicId ? 'Clinic: ' + user.clinicId.toUpperCase() : 'All Clinics (Super Admin)'}</span>
+                    <span class="badge" style="font-size: 0.8125rem; color: var(--primary); background-color: var(--bg-card-hover); padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); display: inline-block; margin-top: 0.35rem; font-weight: 600;">
+                        ${getClinicDisplayName(user.clinicId)}
+                    </span>
                 </div>
             `;
         }
@@ -281,6 +310,7 @@ const SlashDR = {
         licenses: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>`,
         documents: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
         audit: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg>`,
+        users: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
         sun: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
         moon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
     }

@@ -290,7 +290,7 @@ select.form-input option {
     color: var(--status-valid-text);
 }
 
-.badge-warning, .badge-renewal {
+.badge-warning, .badge-renewal, .badge-renewal-due-soon {
     background-color: var(--status-warning-bg);
     border-color: var(--status-warning-border);
     color: var(--status-warning-text);

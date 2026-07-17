@@ -650,42 +650,52 @@
             if (card) {
                 card.addEventListener('mouseenter', () => {
                     rect = card.getBoundingClientRect();
+                    card.style.transition = 'none'; // Disable transition during mouse moves for instant response
                 });
             }
 
-            wrapper.addEventListener('mousemove', (e) => {
-                const widthHalf = window.innerWidth / 2;
-                const heightHalf = window.innerHeight / 2;
-                
-                // 1. Background Shield Parallax movement (very subtle)
-                const shieldX = (e.clientX - widthHalf) * 0.025;
-                const shieldY = (e.clientY - heightHalf) * 0.025;
-                if (shieldContainer) {
-                    shieldContainer.style.transform = `translate(calc(-50% + ${shieldX}px), calc(-50% + ${shieldY}px))`;
-                }
+            let ticking = false;
 
-                // 2. Card Parallax tilt & glare calculations
-                if (card && rect) {
-                    const cardCenterX = rect.left + rect.width / 2;
-                    const cardCenterY = rect.top + rect.height / 2;
-                    
-                    const percentX = (e.clientX - cardCenterX) / widthHalf;
-                    const percentY = (e.clientY - cardCenterY) / heightHalf;
-                    
-                    const maxRotation = 6; // subtle tilt
-                    const rotX = (percentY * -maxRotation).toFixed(2);
-                    const rotY = (percentX * maxRotation).toFixed(2);
-                    
-                    card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-2px)`;
-                    
-                    card.style.setProperty('--glare-x', `${(percentX * 50) + 50}%`);
-                    card.style.setProperty('--glare-y', `${(percentY * 50) + 50}%`);
+            wrapper.addEventListener('mousemove', (e) => {
+                if (!ticking) {
+                    requestAnimationFrame(() => {
+                        const widthHalf = window.innerWidth / 2;
+                        const heightHalf = window.innerHeight / 2;
+                        
+                        // 1. Background Shield Parallax movement (very subtle)
+                        const shieldX = (e.clientX - widthHalf) * 0.025;
+                        const shieldY = (e.clientY - heightHalf) * 0.025;
+                        if (shieldContainer) {
+                            shieldContainer.style.transform = `translate(calc(-50% + ${shieldX}px), calc(-50% + ${shieldY}px))`;
+                        }
+
+                        // 2. Card Parallax tilt & glare calculations
+                        if (card && rect) {
+                            const cardCenterX = rect.left + rect.width / 2;
+                            const cardCenterY = rect.top + rect.height / 2;
+                            
+                            const percentX = (e.clientX - cardCenterX) / widthHalf;
+                            const percentY = (e.clientY - cardCenterY) / heightHalf;
+                            
+                            const maxRotation = 6; // subtle tilt
+                            const rotX = (percentY * -maxRotation).toFixed(2);
+                            const rotY = (percentX * maxRotation).toFixed(2);
+                            
+                            card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-2px)`;
+                            
+                            card.style.setProperty('--glare-x', `${(percentX * 50) + 50}%`);
+                            card.style.setProperty('--glare-y', `${(percentY * 50) + 50}%`);
+                        }
+                        ticking = false;
+                    });
+                    ticking = true;
                 }
             });
 
             wrapper.addEventListener('mouseleave', () => {
                 rect = null;
                 if (card) {
+                    card.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)'; // Restore smooth transition on reset
                     card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
                     card.style.setProperty('--glare-x', '50%');
                     card.style.setProperty('--glare-y', '50%');

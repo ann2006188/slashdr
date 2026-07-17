@@ -14,9 +14,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.scheduling.annotation.Scheduled;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -84,12 +88,60 @@ public class ConsentRecordController {
                 return ResponseEntity.badRequest().body(Map.of("error", "This template requires a witness signature"));
             }
 
-            record.setFrozenFormText(template.getFormBody());
+            String body = template.getFormBody();
+            String filledDataJson = record.getFilledDataJson();
+            if (filledDataJson != null && !filledDataJson.isBlank()) {
+                try {
+                    // Extract all key-value pairs from JSON using a robust regex that handles strings and numbers
+                    java.util.Map<String, String> filledMap = new java.util.HashMap<>();
+                    java.util.regex.Pattern jsonPattern = java.util.regex.Pattern.compile("\"([^\"]+)\"\\s*:\\s*(?:\"([^\"]*)\"|([^,}\\s]+))");
+                    java.util.regex.Matcher jsonMatcher = jsonPattern.matcher(filledDataJson);
+                    while (jsonMatcher.find()) {
+                        String key = jsonMatcher.group(1);
+                        String value = jsonMatcher.group(2) != null ? jsonMatcher.group(2) : jsonMatcher.group(3);
+                        if (key != null && value != null) {
+                            // Normalize the key by removing all spaces and converting to lowercase
+                            String normKey = key.replaceAll("\\s+", "").toLowerCase();
+                            filledMap.put(normKey, value);
+                        }
+                    }
+
+                    // Find and replace all placeholders in the form body (e.g. [Patient Name] or [PatientName])
+                    java.util.regex.Pattern placeholderPattern = java.util.regex.Pattern.compile("\\[([^\\]]+)\\]");
+                    java.util.regex.Matcher placeholderMatcher = placeholderPattern.matcher(body);
+                    StringBuffer sb = new StringBuffer();
+                    while (placeholderMatcher.find()) {
+                        String originalPlaceholder = placeholderMatcher.group(0); // e.g. [Patient Name]
+                        String innerContent = placeholderMatcher.group(1);       // e.g. Patient Name
+                        String normContent = innerContent.replaceAll("\\s+", "").toLowerCase(); // e.g. patientname
+
+                        if (filledMap.containsKey(normContent)) {
+                            placeholderMatcher.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(filledMap.get(normContent)));
+                        } else {
+                            placeholderMatcher.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(originalPlaceholder));
+                        }
+                    }
+                    placeholderMatcher.appendTail(sb);
+                    body = sb.toString();
+
+                } catch (Exception e) {
+                    // fallback
+                }
+            }
+            record.setFrozenFormText(body);
             record.setStatus("active");
         }
 
         ConsentRecord saved = repository.save(record);
-        auditLogger.log(isDeclined ? "DECLINED" : "CAPTURED", "consent_record", saved.getId());
+        java.util.Map<String, Object> meta = new java.util.HashMap<>();
+        meta.put("patientId", saved.getPatientId());
+        meta.put("visitId", saved.getVisitId());
+        meta.put("templateId", saved.getTemplateId());
+        meta.put("witnessName", saved.getWitnessName());
+        if (isDeclined) {
+            meta.put("declineReason", saved.getVoidReason());
+        }
+        auditLogger.log(isDeclined ? "DECLINED" : "CAPTURED", "consent_record", saved.getId(), meta);
         return ResponseEntity.ok(saved);
     }
 
@@ -113,7 +165,11 @@ public class ConsentRecordController {
         record.setStatus("void");
         record.setVoidReason(reason);
         ConsentRecord saved = repository.save(record);
-        auditLogger.log("VOIDED", "consent_record", saved.getId());
+        java.util.Map<String, Object> meta = new java.util.HashMap<>();
+        meta.put("voidReason", saved.getVoidReason());
+        meta.put("patientId", saved.getPatientId());
+        meta.put("visitId", saved.getVisitId());
+        auditLogger.log("VOIDED", "consent_record", saved.getId(), meta);
         return ResponseEntity.ok(saved);
     }
 
@@ -195,10 +251,22 @@ public class ConsentRecordController {
 
         byte[] pdfBytes = buildConsentPdf(record);
 
+        java.util.Map<String, Object> meta = java.util.Map.of(
+                "patientId", record.getPatientId(),
+                "visitId", record.getVisitId(),
+                "filename", "consent-record-" + id + ".pdf"
+        );
+        auditLogger.log("PDF_EXPORT", "consent_record", id, meta);
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=consent-record-" + id + ".pdf")
                 .body(pdfBytes);
+    }
+
+    private String extractFilename(String url) {
+        if (url == null || !url.contains("/")) return null;
+        return url.substring(url.lastIndexOf('/') + 1);
     }
 
     private byte[] buildConsentPdf(ConsentRecord record) throws IOException {
@@ -208,6 +276,25 @@ public class ConsentRecordController {
 
             PDType1Font font = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
             PDType1Font boldFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+
+            // Load signature images if available
+            PDImageXObject patientSigImage = null;
+            String patientSigFile = extractFilename(record.getPatientSignatureUrl());
+            if (patientSigFile != null) {
+                Path path = Paths.get("uploads", patientSigFile);
+                if (Files.exists(path)) {
+                    patientSigImage = PDImageXObject.createFromFile(path.toAbsolutePath().toString(), document);
+                }
+            }
+
+            PDImageXObject witnessSigImage = null;
+            String witnessSigFile = extractFilename(record.getWitnessSignatureUrl());
+            if (witnessSigFile != null) {
+                Path path = Paths.get("uploads", witnessSigFile);
+                if (Files.exists(path)) {
+                    witnessSigImage = PDImageXObject.createFromFile(path.toAbsolutePath().toString(), document);
+                }
+            }
 
             try (PDPageContentStream content = new PDPageContentStream(document, page)) {
                 float margin = 50;
@@ -250,16 +337,70 @@ public class ConsentRecordController {
 
                 content.setFont(font, 10);
                 String formText = record.getFrozenFormText() != null ? record.getFrozenFormText() : "(not recorded)";
-                // Simple POC limitation: text wraps to fit the page width, but very
-                // long consent text isn't paginated onto a second page - fine for
-                // typical consent form lengths, would need more work for long documents.
+                
+                // Wrap text and print - stop wrapping if we run out of vertical space (above signatures area)
                 for (String wrapped : wrapText(formText, 95)) {
-                    if (y < margin) break;
+                    if (y < 180) break; // Keep space at the bottom for signature boxes
                     content.beginText();
                     content.newLineAtOffset(margin, y);
                     content.showText(wrapped);
                     content.endText();
                     y -= leading;
+                }
+
+                // Render signatures at y = 110 (within 50-170 bounds)
+                float sigY = 110;
+
+                // Patient Signature Drawing
+                if (patientSigImage != null) {
+                    float w = 140;
+                    float h = 55;
+                    float aspect = (float) patientSigImage.getWidth() / patientSigImage.getHeight();
+                    if (aspect > (w / h)) {
+                        h = w / aspect;
+                    } else {
+                        w = h * aspect;
+                    }
+                    content.drawImage(patientSigImage, margin, sigY - h, w, h);
+                }
+
+                content.beginText();
+                content.setFont(boldFont, 10);
+                content.newLineAtOffset(margin, sigY + 5);
+                content.showText("Patient Signature");
+                content.endText();
+
+                content.beginText();
+                content.setFont(font, 9);
+                content.newLineAtOffset(margin, sigY - 67);
+                content.showText("Patient ID: " + orNA(record.getPatientId()));
+                content.endText();
+
+                // Witness Signature Drawing
+                if (witnessSigImage != null) {
+                    float w = 140;
+                    float h = 55;
+                    float aspect = (float) witnessSigImage.getWidth() / witnessSigImage.getHeight();
+                    if (aspect > (w / h)) {
+                        h = w / aspect;
+                    } else {
+                        w = h * aspect;
+                    }
+                    content.drawImage(witnessSigImage, margin + 250, sigY - h, w, h);
+                }
+
+                if (record.getWitnessName() != null && !record.getWitnessName().isBlank()) {
+                    content.beginText();
+                    content.setFont(boldFont, 10);
+                    content.newLineAtOffset(margin + 250, sigY + 5);
+                    content.showText("Witness Signature");
+                    content.endText();
+
+                    content.beginText();
+                    content.setFont(font, 9);
+                    content.newLineAtOffset(margin + 250, sigY - 67);
+                    content.showText("Witness Name: " + record.getWitnessName());
+                    content.endText();
                 }
             }
 
@@ -315,6 +456,13 @@ public class ConsentRecordController {
         }
 
         byte[] csvBytes = csv.toString().getBytes(StandardCharsets.UTF_8);
+
+        java.util.Map<String, Object> meta = new java.util.HashMap<>();
+        if (patientId != null) meta.put("patientId", patientId);
+        if (procedureType != null) meta.put("procedureType", procedureType);
+        if (status != null) meta.put("status", status);
+        meta.put("recordsCount", records.size());
+        auditLogger.log("CSV_EXPORT", "consent_register", 0L, meta);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "text/csv")

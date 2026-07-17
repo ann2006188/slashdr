@@ -260,12 +260,20 @@ const ConsentRecords = {
             return;
         }
 
-        container.innerHTML = Array.from(placeholders).map(tag => `
-            <div class="form-group">
-                <label class="form-label" for="placeholder-field-${tag.replace(/\s+/g, '-')}">${tag}</label>
-                <input type="text" class="form-input placeholder-field-input" data-tag="${tag}" id="placeholder-field-${tag.replace(/\s+/g, '-')}" placeholder="Enter ${tag}..." required>
-            </div>
-        `).join('');
+        container.innerHTML = Array.from(placeholders).map(tag => {
+            const isDoctorField = tag.toLowerCase().replace(/\s+/g, '') === 'doctorname' || tag.toLowerCase().replace(/\s+/g, '') === 'doctor';
+            const user = SlashDR.getCurrentUser();
+            let defaultValue = '';
+            if (isDoctorField && user && user.role === 'ROLE_DOCTOR') {
+                defaultValue = user.name;
+            }
+            return `
+                <div class="form-group">
+                    <label class="form-label" for="placeholder-field-${tag.replace(/\s+/g, '-')}">${tag}</label>
+                    <input type="text" class="form-input placeholder-field-input" data-tag="${tag}" id="placeholder-field-${tag.replace(/\s+/g, '-')}" placeholder="Enter ${tag}..." value="${defaultValue}" required>
+                </div>
+            `;
+        }).join('');
 
         // Attach keyup listeners to inputs to update the live preview in real time
         const inputs = container.querySelectorAll('.placeholder-field-input');
@@ -564,6 +572,44 @@ const ConsentRecords = {
                     btnVoid.style.display = 'none';
                 }
                 await this.loadSignatureImages(record);
+            }
+
+            // Load and display Audit Trail (C.2 Viewable per entity)
+            const timelineContainer = document.getElementById('detail-audit-timeline');
+            if (timelineContainer) {
+                timelineContainer.innerHTML = `<span style="font-size: 0.8125rem; color: var(--text-muted);">Loading audit history...</span>`;
+                try {
+                    const auditLogs = await SlashDR.apiFetch(`/api/audit-log?entityType=consent_record&entityId=${id}`);
+                    if (auditLogs && auditLogs.length > 0) {
+                        // Sort by timestamp desc
+                        auditLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        timelineContainer.innerHTML = auditLogs.map(log => {
+                            let metaDetails = '';
+                            if (log.metaJson) {
+                                try {
+                                    const parsed = JSON.parse(log.metaJson);
+                                    metaDetails = Object.entries(parsed)
+                                        .map(([k, v]) => `<span style="font-size:0.75rem; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:3px; border:1px solid var(--border-color); margin-right:4px;">${k}: ${v}</span>`)
+                                        .join('');
+                                } catch (e) {}
+                            }
+                            return `
+                                <div style="display: flex; flex-direction: column; gap: 0.125rem; border-left: 2px solid var(--primary); padding-left: 0.75rem; position: relative; margin-bottom: 0.5rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.8125rem; font-weight: 700; color: var(--text-primary);">${log.actionType}</span>
+                                        <span style="font-size: 0.75rem; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</span>
+                                    </div>
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">By: <strong>${log.userId}</strong> (${log.userRole})</span>
+                                    ${metaDetails ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">${metaDetails}</div>` : ''}
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        timelineContainer.innerHTML = `<span style="font-size: 0.8125rem; color: var(--text-muted);">No audit events recorded.</span>`;
+                    }
+                } catch (e) {
+                    timelineContainer.innerHTML = `<span style="font-size: 0.8125rem; color: var(--status-danger-text);">Error loading audit: ${e.message}</span>`;
+                }
             }
 
             drawer.classList.add('open');

@@ -1,3 +1,4 @@
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\AppUserRepository.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\AuditLogController.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\AuditLogger.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\AuditLogRepository.java
@@ -10,9 +11,13 @@ C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\ConsentRecordRe
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\ConsentTemplateController.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\ConsentTemplateRepository.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\CurrentUserService.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\CustomUserDetailsService.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\DatabaseSeeder.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\DocumentController.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\entity\AppUser.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\entity\AuditLog.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\entity\ClinicLicense.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\entity\ConsentRecord.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\entity\ConsentTemplate.java
 C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\GenerateDemoSignatures.java
+C:\Users\anncr\slashdr\backend\src\main\java\com\slashdr\backend\UserController.java

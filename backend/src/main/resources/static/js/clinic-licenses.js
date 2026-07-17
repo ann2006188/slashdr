@@ -48,9 +48,39 @@ const ClinicLicensesPage = {
             `;
             document.getElementById('filter-clinic-id').addEventListener('change', () => this.loadLicenses());
 
-            // Show clinic dropdown in Add Form
-            document.getElementById('drawer-clinic-block').style.display = 'block';
-            document.getElementById('add-clinic-id').required = true;
+            // Setup Clinic block for Add Form
+            const container = document.getElementById('drawer-clinic-block');
+            if (user.role === 'ROLE_SUPER_ADMIN') {
+                container.style.display = 'block';
+                document.getElementById('add-clinic-id').style.display = 'block';
+                document.getElementById('add-clinic-id').required = true;
+            } else {
+                container.style.display = 'block';
+                document.getElementById('add-clinic-id').style.display = 'none';
+                document.getElementById('add-clinic-id').required = false;
+                let badge = document.getElementById('add-clinic-badge');
+                if (!badge) {
+                    badge = document.createElement('div');
+                    badge.id = 'add-clinic-badge';
+                    badge.className = 'badge';
+                    badge.style.fontSize = '0.875rem';
+                    badge.style.color = 'var(--primary)';
+                    badge.style.backgroundColor = 'var(--bg-card-hover)';
+                    badge.style.padding = '0.5rem 1rem';
+                    badge.style.borderRadius = 'var(--radius-sm)';
+                    badge.style.border = '1px solid var(--border-color)';
+                    badge.style.fontWeight = '600';
+                    badge.style.marginTop = '0.5rem';
+                    container.appendChild(badge);
+                }
+                const clinics = {
+                    'clinic-001': 'Sunrise Medical Centre',
+                    'clinic-002': 'Horizon Healthcare',
+                    'clinic-003': 'Apex Medical Group'
+                };
+                const clinicName = clinics[user.clinicId.toLowerCase()] || 'General Clinic';
+                badge.textContent = `Managing: ${clinicName} (${user.clinicId.toUpperCase()})`;
+            }
         }
 
         // Setup Search/Filter events
@@ -58,7 +88,7 @@ const ClinicLicensesPage = {
         document.getElementById('filter-license-type').addEventListener('change', () => this.applyFilters());
 
         // Setup Drawers close actions
-        const closeSelectors = ['btn-close-add-drawer', 'btn-cancel-add', 'btn-close-renew-drawer', 'btn-cancel-renew', 'license-backdrop'];
+        const closeSelectors = ['btn-close-add-drawer', 'btn-cancel-add', 'btn-close-renew-drawer', 'btn-cancel-renew', 'btn-close-details-drawer', 'btn-close-details-footer', 'license-backdrop'];
         closeSelectors.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
@@ -221,6 +251,9 @@ const ClinicLicensesPage = {
                         <button class="btn btn-secondary" onclick="ClinicLicensesPage.viewDocument('${l.documentUrl}')" style="padding: 0.4rem 0.8rem; font-size: 0.8125rem;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             View File
+                        </button>
+                        <button class="btn btn-secondary" onclick="ClinicLicensesPage.openDetailsDrawer(${l.id})" style="padding: 0.4rem 0.8rem; font-size: 0.8125rem;">
+                            History
                         </button>
                         ${isAdmin && !isSuperseded ? `
                             <button class="btn btn-primary" onclick="ClinicLicensesPage.openRenewDrawer(${l.id})" style="padding: 0.4rem 0.8rem; font-size: 0.8125rem;">
@@ -409,7 +442,60 @@ const ClinicLicensesPage = {
     closeAllDrawers() {
         document.getElementById('add-license-drawer').classList.remove('open');
         document.getElementById('renew-license-drawer').classList.remove('open');
+        const detailsDrawer = document.getElementById('license-details-drawer');
+        if (detailsDrawer) detailsDrawer.classList.remove('open');
         document.getElementById('license-backdrop').classList.remove('open');
+    },
+
+    async openDetailsDrawer(id) {
+        const license = allLicenses.find(l => l.id === id);
+        if (!license) return;
+
+        const drawer = document.getElementById('license-details-drawer');
+        const backdrop = document.getElementById('license-backdrop');
+
+        document.getElementById('detail-license-type').textContent = license.licenseType;
+        document.getElementById('detail-license-number').textContent = license.licenseNumber;
+        document.getElementById('detail-license-status').innerHTML = `<span class="badge badge-${license.status.toLowerCase().replace(/\s+/g, '-')}">${license.status}</span>`;
+
+        const timelineContainer = document.getElementById('license-audit-timeline');
+        if (timelineContainer) {
+            timelineContainer.innerHTML = `<span style="font-size: 0.8125rem; color: var(--text-muted);">Loading audit history...</span>`;
+            try {
+                const auditLogs = await SlashDR.apiFetch(`/api/audit-log?entityType=clinic_license&entityId=${id}`);
+                if (auditLogs && auditLogs.length > 0) {
+                    auditLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    timelineContainer.innerHTML = auditLogs.map(log => {
+                        let metaDetails = '';
+                        if (log.metaJson) {
+                            try {
+                                const parsed = JSON.parse(log.metaJson);
+                                metaDetails = Object.entries(parsed)
+                                    .map(([k, v]) => `<span style="font-size:0.75rem; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:3px; border:1px solid var(--border-color); margin-right:4px;">${k}: ${v}</span>`)
+                                    .join('');
+                            } catch (e) {}
+                        }
+                        return `
+                            <div style="display: flex; flex-direction: column; gap: 0.125rem; border-left: 2px solid var(--primary); padding-left: 0.75rem; position: relative; margin-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.8125rem; font-weight: 700; color: var(--text-primary);">${log.actionType}</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</span>
+                                </div>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">By: <strong>${log.userId}</strong> (${log.userRole})</span>
+                                ${metaDetails ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">${metaDetails}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    timelineContainer.innerHTML = `<span style="font-size: 0.8125rem; color: var(--text-muted);">No audit events recorded.</span>`;
+                }
+            } catch (e) {
+                timelineContainer.innerHTML = `<span style="font-size: 0.8125rem; color: var(--status-danger-text);">Error loading audit: ${e.message}</span>`;
+            }
+        }
+
+        drawer.classList.add('open');
+        backdrop.classList.add('open');
     },
 
     // --- Submissions (REST API Save & Renew) ---

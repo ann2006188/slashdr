@@ -1,5 +1,8 @@
 package com.slashdr.backend;
 
+import com.slashdr.backend.entity.ClinicLicense;
+import com.slashdr.backend.entity.ConsentRecord;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +31,15 @@ public class DocumentController {
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of("pdf", "jpg", "jpeg", "png");
     private static final long MAX_FILE_SIZE_BYTES = 5L * 1024 * 1024; // 5MB
+
+    @Autowired
+    private AuditLogger auditLogger;
+
+    @Autowired
+    private ClinicLicenseRepository clinicLicenseRepository;
+
+    @Autowired
+    private ConsentRecordRepository consentRecordRepository;
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadDocument(@RequestParam("file") MultipartFile file) {
@@ -85,6 +97,28 @@ public class DocumentController {
         if (!Files.exists(filePath)) {
             return ResponseEntity.notFound().build();
         }
+
+        // Log Document Viewed
+        String docUrl = "/api/documents/" + documentId;
+        Long entityId = 0L;
+        String entityType = "document";
+
+        List<ClinicLicense> licenses = clinicLicenseRepository.findAll().stream()
+                .filter(l -> docUrl.equals(l.getDocumentUrl()))
+                .toList();
+        if (!licenses.isEmpty()) {
+            entityId = licenses.get(0).getId();
+            entityType = "clinic_license";
+        } else {
+            List<ConsentRecord> records = consentRecordRepository.findAll().stream()
+                    .filter(r -> docUrl.equals(r.getPatientSignatureUrl()) || docUrl.equals(r.getWitnessSignatureUrl()))
+                    .toList();
+            if (!records.isEmpty()) {
+                entityId = records.get(0).getId();
+                entityType = "consent_record";
+            }
+        }
+        auditLogger.log("VIEWED", entityType, entityId, Map.of("documentUrl", docUrl));
 
         Resource resource = new FileSystemResource(filePath);
         return ResponseEntity.ok()

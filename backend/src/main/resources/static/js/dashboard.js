@@ -80,9 +80,10 @@ const Dashboard = {
             const consents = await SlashDR.apiFetch('/api/consent-records');
 
             stats = [
-                { value: summary.total || 0, label: 'Active Licenses', icon: SlashDR.icons.licenses },
-                { value: summary.expiringIn30Days || 0, label: 'Expiring Soon', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>` },
-                { value: summary.expired || 0, label: 'Expired Licenses', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>` },
+                { value: summary.validCount || 0, label: 'Active Licenses', icon: SlashDR.icons.licenses },
+                { value: summary.renewalDueCount || 0, label: 'Renewal Due Soon', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>` },
+                { value: summary.urgentCount || 0, label: 'Urgent Licenses', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>` },
+                { value: summary.expiredCount || 0, label: 'Expired Licenses', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>` },
                 { value: consents.length || 0, label: 'Total Consents', icon: SlashDR.icons.records }
             ];
         } else if (user.role === 'ROLE_CLINIC_ADMIN' || user.role === 'ROLE_DOCTOR') {
@@ -90,13 +91,16 @@ const Dashboard = {
             const licenses = await SlashDR.apiFetch('/api/clinic-licenses');
             const consents = await SlashDR.apiFetch('/api/consent-records');
 
-            const active = licenses.filter(l => l.status !== 'Superseded');
-            const expired = active.filter(l => l.status === 'Expired').length;
-            const urgent = active.filter(l => l.status === 'Urgent' || l.status === 'Renewal Due Soon').length;
+            const current = licenses.filter(l => l.status !== 'Superseded');
+            const valid = current.filter(l => l.status === 'Valid').length;
+            const renewalDue = current.filter(l => l.status === 'Renewal Due Soon').length;
+            const urgent = current.filter(l => l.status === 'Urgent').length;
+            const expired = current.filter(l => l.status === 'Expired').length;
 
             stats = [
-                { value: active.length, label: 'Clinic Licenses', icon: SlashDR.icons.licenses },
-                { value: urgent, label: 'Expiring/Urgent', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>` },
+                { value: valid, label: 'Active Licenses', icon: SlashDR.icons.licenses },
+                { value: renewalDue, label: 'Renewal Due Soon', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>` },
+                { value: urgent, label: 'Urgent Licenses', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>` },
                 { value: expired, label: 'Expired Licenses', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>` },
                 { value: consents.length, label: 'Clinic Consents', icon: SlashDR.icons.records }
             ];
@@ -146,16 +150,27 @@ const Dashboard = {
             
             let rows = '';
             if (summary.byClinic && summary.byClinic.length > 0) {
-                rows = summary.byClinic.map(c => `
-                    <tr>
-                        <td style="font-weight: 600; color: var(--text-primary);">${c.clinicId.toUpperCase()}</td>
-                        <td>${c.totalLicenses}</td>
-                        <td><span class="badge badge-${c.worstStatus.toLowerCase().replace(/\s+/g, '-')}">${c.worstStatus}</span></td>
-                        <td>${c.nextExpiry ? new Date(c.nextExpiry).toLocaleDateString() : 'N/A'}</td>
-                    </tr>
-                `).join('');
+                rows = summary.byClinic.map(c => {
+                    const nextExpiryStr = c.nextExpiry ? new Date(c.nextExpiry).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    }) : 'N/A';
+                    
+                    return `
+                        <tr>
+                            <td style="font-weight: 600; color: var(--text-primary);">${c.clinicId.toUpperCase()}</td>
+                            <td style="font-weight: 600;">${c.totalLicenses}</td>
+                            <td><span class="badge badge-valid">${c.validCount}</span></td>
+                            <td><span class="badge badge-renewal-due-soon">${c.renewalDueCount}</span></td>
+                            <td><span class="badge badge-urgent">${c.urgentCount}</span></td>
+                            <td><span class="badge badge-expired">${c.expiredCount}</span></td>
+                            <td style="font-weight: 600; color: var(--text-secondary);">${nextExpiryStr}</td>
+                        </tr>
+                    `;
+                }).join('');
             } else {
-                rows = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No clinic records found.</td></tr>`;
+                rows = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No clinic records found.</td></tr>`;
             }
 
             panel.innerHTML = `
@@ -169,7 +184,10 @@ const Dashboard = {
                                 <tr>
                                     <th>Clinic ID</th>
                                     <th>Total Licenses</th>
-                                    <th>Worst Status</th>
+                                    <th>Valid</th>
+                                    <th>Renewal Due Soon</th>
+                                    <th>Urgent</th>
+                                    <th>Expired</th>
                                     <th>Next Expiry</th>
                                 </tr>
                             </thead>
@@ -332,7 +350,14 @@ const Dashboard = {
                     textColor = 'status-danger-text';
                 }
 
-                const desc = threshold === '0' ? 'License has expired!' : `License expires in ${threshold} days.`;
+                let desc = '';
+                if (threshold === '0') {
+                    desc = 'License has expired! (Critical)';
+                } else if (threshold === '7') {
+                    desc = 'License expires in 7 days or less! (Urgent)';
+                } else {
+                    desc = `License expires in ${threshold} days. (Renewal Due Soon)`;
+                }
                 const dateLabel = new Date(n.timestamp).toLocaleString();
 
                 return `

@@ -66,7 +66,12 @@ public class ClinicLicenseController {
 
         license.setStatus(computeStatus(license.getExpiryDate()));
         ClinicLicense saved = repository.save(license);
-        auditLogger.log("CREATED", "clinic_license", saved.getId());
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("licenseType", saved.getLicenseType());
+        meta.put("licenseNumber", saved.getLicenseNumber());
+        meta.put("expiryDate", saved.getExpiryDate() != null ? saved.getExpiryDate().toString() : null);
+        meta.put("documentUrl", saved.getDocumentUrl());
+        auditLogger.log("CREATED", "clinic_license", saved.getId(), meta);
 
         // Doc B.1 business rule: "System flags if two 'current' entries of the
         // same type exist for one clinic (likely a data error)" - this is a
@@ -141,7 +146,13 @@ public class ClinicLicenseController {
         newLicense.setRenewedFromId(oldLicense.getId());
 
         ClinicLicense saved = repository.save(newLicense);
-        auditLogger.log("RENEWED", "clinic_license", saved.getId());
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("renewedFromId", oldLicense.getId());
+        meta.put("licenseType", saved.getLicenseType());
+        meta.put("licenseNumber", saved.getLicenseNumber());
+        meta.put("expiryDate", saved.getExpiryDate() != null ? saved.getExpiryDate().toString() : null);
+        meta.put("documentUrl", saved.getDocumentUrl());
+        auditLogger.log("RENEWED", "clinic_license", saved.getId(), meta);
         return ResponseEntity.ok(saved);
     }
 
@@ -155,10 +166,9 @@ public class ClinicLicenseController {
 
         List<ClinicLicense> current = all.stream().filter(l -> !"Superseded".equals(l.getStatus())).toList();
 
-        long total = current.size();
-        long expiringIn30Days = current.stream()
-                .filter(l -> "Renewal Due Soon".equals(l.getStatus()) || "Urgent".equals(l.getStatus()))
-                .count();
+        long valid = current.stream().filter(l -> "Valid".equals(l.getStatus())).count();
+        long renewalDue = current.stream().filter(l -> "Renewal Due Soon".equals(l.getStatus())).count();
+        long urgent = current.stream().filter(l -> "Urgent".equals(l.getStatus())).count();
         long expired = current.stream().filter(l -> "Expired".equals(l.getStatus())).count();
 
         Map<String, List<ClinicLicense>> byClinic = current.stream()
@@ -168,9 +178,18 @@ public class ClinicLicenseController {
         for (Map.Entry<String, List<ClinicLicense>> entry : byClinic.entrySet()) {
             List<ClinicLicense> clinicLicenses = entry.getValue();
 
+            long expCount = clinicLicenses.stream().filter(l -> "Expired".equals(l.getStatus())).count();
+            long urgCount = clinicLicenses.stream().filter(l -> "Urgent".equals(l.getStatus())).count();
+            long renCount = clinicLicenses.stream().filter(l -> "Renewal Due Soon".equals(l.getStatus())).count();
+            long valCount = clinicLicenses.stream().filter(l -> "Valid".equals(l.getStatus())).count();
+
             Map<String, Object> row = new HashMap<>();
             row.put("clinicId", entry.getKey());
             row.put("totalLicenses", clinicLicenses.size());
+            row.put("expiredCount", expCount);
+            row.put("urgentCount", urgCount);
+            row.put("renewalDueCount", renCount);
+            row.put("validCount", valCount);
             row.put("worstStatus", worstStatusOf(clinicLicenses));
             row.put("nextExpiry", clinicLicenses.stream()
                     .map(ClinicLicense::getExpiryDate)
@@ -180,9 +199,10 @@ public class ClinicLicenseController {
         }
 
         Map<String, Object> summary = new HashMap<>();
-        summary.put("total", total);
-        summary.put("expiringIn30Days", expiringIn30Days);
-        summary.put("expired", expired);
+        summary.put("validCount", valid);
+        summary.put("renewalDueCount", renewalDue);
+        summary.put("urgentCount", urgent);
+        summary.put("expiredCount", expired);
         summary.put("byClinic", perClinic);
         return summary;
     }
@@ -224,7 +244,7 @@ public class ClinicLicenseController {
 
             long daysToExpiry = ChronoUnit.DAYS.between(LocalDate.now(), license.getExpiryDate());
             Integer newThreshold = null;
-            if (daysToExpiry <= 0) newThreshold = 0;
+            if (daysToExpiry < 0) newThreshold = 0;
             else if (daysToExpiry <= 7) newThreshold = 7;
             else if (daysToExpiry <= 15) newThreshold = 15;
             else if (daysToExpiry <= 30) newThreshold = 30;

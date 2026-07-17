@@ -1,12 +1,21 @@
+# Maven
 backend/target/
-backend/.idea/
-backend/.vscode/
-backend/*.class
-backend/*.log
-backend/*.iml
 
-frontend/node_modules/
+# IDE
+.vscode/
+.idea/
+*.iml
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
 .env
 
-.DS_Store
+# Node (if applicable)
+node_modules/
+dist/

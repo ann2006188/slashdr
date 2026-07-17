@@ -55,16 +55,33 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Responsive stats layout */
-        @media (max-width: 1024px) {
-            .stat-card {
-                grid-column: span 6;
+        /* Responsive stats layout for 5-column overview */
+        #stats-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        #stats-container .stat-card {
+            grid-column: auto;
+        }
+
+        @media (max-width: 1200px) {
+            #stats-container {
+                grid-template-columns: repeat(3, 1fr);
             }
         }
 
-        @media (max-width: 640px) {
-            .stat-card {
-                grid-column: span 12;
+        @media (max-width: 768px) {
+            #stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            #stats-container {
+                grid-template-columns: 1fr;
             }
         }
 

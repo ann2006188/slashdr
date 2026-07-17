@@ -25,7 +25,12 @@ public class ConsentTemplateController {
     @PostMapping
     public ResponseEntity<ConsentTemplate> createTemplate(@RequestBody ConsentTemplate template) {
         ConsentTemplate savedTemplate = repository.save(template);
-        auditLogger.log("CREATED", "consent_template", savedTemplate.getId());
+        java.util.Map<String, Object> meta = java.util.Map.of(
+                "templateName", savedTemplate.getName(),
+                "procedureType", savedTemplate.getProcedureType(),
+                "requiresWitness", savedTemplate.isRequiresWitness()
+        );
+        auditLogger.log("CREATED", "consent_template", savedTemplate.getId(), meta);
         return ResponseEntity.ok(savedTemplate);
     }
 
@@ -42,7 +47,12 @@ public class ConsentTemplateController {
         existing.setActive(templateDetails.isActive());
         
         ConsentTemplate saved = repository.save(existing);
-        auditLogger.log("EDITED", "consent_template", saved.getId());
+        java.util.Map<String, Object> meta = java.util.Map.of(
+                "templateName", saved.getName(),
+                "procedureType", saved.getProcedureType(),
+                "requiresWitness", saved.isRequiresWitness()
+        );
+        auditLogger.log("EDITED", "consent_template", saved.getId(), meta);
         return ResponseEntity.ok(saved);
     }
 }

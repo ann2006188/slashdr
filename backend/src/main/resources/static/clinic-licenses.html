@@ -402,6 +402,35 @@
         </form>
     </div>
 
+    <!-- DRAWER: License Details & Audit Trail -->
+    <div class="drawer" id="license-details-drawer" style="max-width: 600px;">
+        <div class="drawer-header">
+            <h3 class="modal-title">License Audit History</h3>
+            <button class="modal-close" id="btn-close-details-drawer">&times;</button>
+        </div>
+        <div class="drawer-body flex flex-col gap-6" style="padding-bottom: 3rem;">
+            <!-- License Info Summary -->
+            <div style="background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem;">
+                <h4 style="margin:0 0 0.5rem 0; color: var(--text-primary);" id="detail-license-type"></h4>
+                <div style="display:flex; justify-content:space-between; font-size:0.875rem; color:var(--text-secondary); margin-top: 0.5rem;">
+                    <span>License No: <strong id="detail-license-number" style="font-family:monospace; color: var(--text-primary);"></strong></span>
+                    <span>Status: <span id="detail-license-status"></span></span>
+                </div>
+            </div>
+
+            <!-- Audit Timeline -->
+            <div class="flex flex-col gap-2">
+                <span class="form-label">Compliance Audit Trail</span>
+                <div class="timeline" id="license-audit-timeline" style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                    <!-- Audit logs loaded dynamically -->
+                </div>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <button type="button" class="btn btn-secondary" id="btn-close-details-footer">Close</button>
+        </div>
+    </div>
+
     <!-- Backdrop for Drawer modals -->
     <div class="modal-backdrop" id="license-backdrop"></div>
 
