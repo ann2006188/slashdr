@@ -312,3 +312,13 @@ The seeder automatically inserts the following accounts using BCrypt hashing:
 *   **Frontend UI & Design**: `HTML5`, `CSS3 Variables`, `Vanilla ES6 JavaScript`, `HTML5 Canvas API`, `@import Google Fonts`
 
 ---
+## Database
+
+Database: MySQL 8.x
+
+Import the database using:
+
+mysql -u root -p < database/slashdr_compliance.sql
+
+Database name:
+slashdr_compliance
